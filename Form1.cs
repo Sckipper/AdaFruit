@@ -1,8 +1,10 @@
 ﻿
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Windows.Devices.Enumeration;
 
 namespace Medic
 {
@@ -38,22 +40,32 @@ namespace Medic
 
             watcher.NewDeviceDiscovered += (device) =>
             {
-                listBoxDevices.Invoke(new Action(() => 
-                    listBoxDevices.Items.Add(device)
-                ));
+                listViewDevices.Invoke(new Action(() =>
+                {
+                    ListViewItem item = new ListViewItem();
+                    item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; // Or whatever display text you need
+                    item.Tag = device;
+
+                    if (device.Paired)
+                        listViewDevices.Items.Add(item).BackColor = Color.GreenYellow;
+                    else listViewDevices.Items.Add(item);
+                }));
             };
 
             watcher.DeviceNameChanged += (device) =>
             {
                 log("Device name changed: " + device);
-                listBoxDevices.Invoke(new Action(() =>
+                listViewDevices.Invoke(new Action(() =>
                 {
-                    for (int i=0; i< listBoxDevices.Items.Count; i++)
+                    for (int i=0; i< listViewDevices.Items.Count; i++)
                     {
-                        if (((DnaBluetoothLEDevice)listBoxDevices.Items[i]).DeviceId == device.DeviceId)
+                        if ( ((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId)
                         {
-                            listBoxDevices.Items.RemoveAt(i); //remove the element
-                            listBoxDevices.Items.Insert(i, device);
+                            listViewDevices.Items.RemoveAt(i); //remove the element
+                            ListViewItem item = new ListViewItem();
+                            item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; // Or whatever display text you need
+                            item.Tag = device;
+                            listViewDevices.Items.Insert(i, item);
                         }
                     }
                 }));
@@ -69,14 +81,25 @@ namespace Medic
 
         private void buttonPair_Click(object sender, EventArgs e)
         {
-            DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listBoxDevices.SelectedItem;
+            DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listViewDevices.SelectedItems[0].Tag;
             Task.Run(async () =>
             {
                 try
                 {
                     // Try and connect
                     log("Pairing with " + device);
-                    await watcher.PairToDeviceAsync(device.DeviceId);
+                    var result = await watcher.PairToDeviceAsync(device.DeviceId);
+
+                    if (result == null || result.Status == DevicePairingResultStatus.Paired)
+                    {
+                        log("Pairing successful with " + device);
+                        listViewDevices.Invoke(new Action(() =>
+                        {
+                            listViewDevices.SelectedItems[0].BackColor = Color.GreenYellow;
+                        }));
+                    }
+                    else
+                        log("Pairing failed: " + result.Status);
                 }
                 catch (Exception ex)
                 {
@@ -88,9 +111,19 @@ namespace Medic
             });
         }
 
-        private void listBoxDevices_SelectedIndexChanged(object sender, EventArgs e)
+        private void listViewDevices_SelectedIndexChanged(object sender, EventArgs e)
         {
-            buttonPair.Enabled = true;
+            if (listViewDevices.SelectedItems.Count>0 && listViewDevices.SelectedItems[0].BackColor == Color.GreenYellow)
+            {
+                buttonPair.Enabled = false;
+                buttonUnpair.Enabled = true;
+            }
+            else
+            {
+                buttonPair.Enabled = true;
+                buttonUnpair.Enabled = false;
+            }
+                
         }
 
         public void log(String message)

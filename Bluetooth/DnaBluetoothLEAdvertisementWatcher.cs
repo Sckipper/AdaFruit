@@ -332,7 +332,7 @@ namespace Medic
         /// </summary>
         /// <param name="deviceId">The BLE device ID</param>
         /// <returns></returns>
-        public async Task PairToDeviceAsync(string deviceId)
+        public async Task<DevicePairingResult> PairToDeviceAsync(string deviceId)
         {
             // Get bluetooth device info
             var device = await BluetoothLEDevice.FromIdAsync(deviceId).AsTask();
@@ -345,7 +345,7 @@ namespace Medic
             // If we are already paired...
             if (device.DeviceInformation.Pairing.IsPaired)
                 // Do nothing
-                return;
+                return null;
 
             // Listen out for pairing request
             device.DeviceInformation.Pairing.Custom.PairingRequested += (sender, args) =>
@@ -359,19 +359,19 @@ namespace Medic
             };
 
             // Try and pair to the device
-            var result = await device.DeviceInformation.Pairing.Custom.PairAsync(
+            return await device.DeviceInformation.Pairing.Custom.PairAsync(
                 // For Contour we should try Provide Pin
                 // TODO: Try different types to see if any work
                 DevicePairingKinds.ConfirmOnly
                 ).AsTask();
 
             // Log the result
-            if (result.Status == DevicePairingResultStatus.Paired)
-                // TODO: Remove
-                Console.WriteLine("Pairing successful");
-            else
-                // TODO: Remove
-                Console.WriteLine($"Pairing failed: {result.Status}");
+            //if (result.Status == DevicePairingResultStatus.Paired)
+            //    // TODO: Remove
+            //    Console.WriteLine("Pairing successful");
+            //else
+            //    // TODO: Remove
+            //    Console.WriteLine($"Pairing failed: {result.Status}");
         }
 
         #endregion
