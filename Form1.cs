@@ -1,59 +1,103 @@
 ﻿
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Medic
 {
-    public partial class Form1 : Form
+    public partial class MainWindow : Form
     {
-        public Form1()
+        private DnaBluetoothLEAdvertisementWatcher watcher;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        private void MainWindow_Load(object sender, EventArgs e)
         {
             StartBluetoothSearch();
-            InitializeComponent();
         }
 
         private void StartBluetoothSearch()
         {
             // New watcher
-            var watcher = new DnaBluetoothLEAdvertisementWatcher(new GattServiceIds());
+            watcher = new DnaBluetoothLEAdvertisementWatcher(new GattServiceIds());
 
             // Hook into events
             watcher.StartedListening += () =>
             {
-                Debug.WriteLine("Started listening");
+                log("Bluetooth started listening");
             };
 
             watcher.StoppedListening += () =>
             {
-                Debug.WriteLine("Stopped listening");
+                log("Bluetooth stoped listening");
             };
 
             watcher.NewDeviceDiscovered += (device) =>
             {
-                listBox1.Invoke(new Action(() => listBox1.Items.Add(device.Name + " (" + device.SignalStrengthInDB + ")")));
+                listBoxDevices.Invoke(new Action(() => 
+                    listBoxDevices.Items.Add(device)
+                ));
             };
 
             watcher.DeviceNameChanged += (device) =>
             {
-                Debug.WriteLine($"Device name changed: {device}");
+                log("Device name changed: " + device);
+                listBoxDevices.Invoke(new Action(() =>
+                {
+                    for (int i=0; i< listBoxDevices.Items.Count; i++)
+                    {
+                        if (((DnaBluetoothLEDevice)listBoxDevices.Items[i]).DeviceId == device.DeviceId)
+                        {
+                            listBoxDevices.Items.RemoveAt(i); //remove the element
+                            listBoxDevices.Items.Insert(i, device);
+                        }
+                    }
+                }));
             };
 
             watcher.DeviceTimeout += (device) =>
             {
-                Debug.WriteLine($"Device timeout: {device}");
+                log("Device timeout: " + device);
             };
 
             watcher.StartListening();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void buttonPair_Click(object sender, EventArgs e)
         {
-            this.Enabled = false;
+            DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listBoxDevices.SelectedItem;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    // Try and connect
+                    log("Pairing with " + device);
+                    await watcher.PairToDeviceAsync(device.DeviceId);
+                }
+                catch (Exception ex)
+                {
+                    // Log it out
+                    log("Failed to pair with " + device);
+                    Console.WriteLine("Failed to pair to Contour device.");
+                    Console.WriteLine(ex);
+                }
+            });
+        }
 
-            
+        private void listBoxDevices_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            buttonPair.Enabled = true;
+        }
 
-            this.Enabled = true;
+        public void log(String message)
+        {
+            labelConsole.Invoke((MethodInvoker)delegate {
+                labelConsole.Text = message;
+            });
         }
     }
 }

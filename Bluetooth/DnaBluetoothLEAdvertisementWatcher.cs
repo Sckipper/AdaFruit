@@ -362,7 +362,7 @@ namespace Medic
             var result = await device.DeviceInformation.Pairing.Custom.PairAsync(
                 // For Contour we should try Provide Pin
                 // TODO: Try different types to see if any work
-                DevicePairingKinds.ProvidePin
+                DevicePairingKinds.ConfirmOnly
                 ).AsTask();
 
             // Log the result
