@@ -335,7 +335,8 @@ namespace Medic
         public async Task<DevicePairingResult> PairToDeviceAsync(string deviceId)
         {
             // Get bluetooth device info
-            var device = await BluetoothLEDevice.FromIdAsync(deviceId).AsTask();
+            var dev = BluetoothLEDevice.FromIdAsync(deviceId);
+            var device = await dev.AsTask();
 
             // Null guard
             if (device == null)
@@ -358,20 +359,34 @@ namespace Medic
                 args.Accept(); // <-- Could enter a pin in here to accept
             };
 
+
             // Try and pair to the device
-            return await device.DeviceInformation.Pairing.Custom.PairAsync(
+            var result = await device.DeviceInformation.Pairing.Custom.PairAsync(
                 // For Contour we should try Provide Pin
                 // TODO: Try different types to see if any work
                 DevicePairingKinds.ConfirmOnly
                 ).AsTask();
 
-            // Log the result
-            //if (result.Status == DevicePairingResultStatus.Paired)
-            //    // TODO: Remove
-            //    Console.WriteLine("Pairing successful");
-            //else
-            //    // TODO: Remove
-            //    Console.WriteLine($"Pairing failed: {result.Status}");
+            if (result.Status == DevicePairingResultStatus.Paired)
+            {
+                var services = await device.GetGattServicesAsync();
+                foreach (var service in services.Services)
+                {
+                    Console.WriteLine($"Service: {service.Uuid}");
+                    var characteristics = await service.GetCharacteristicsAsync();
+                    foreach (var character in characteristics.Characteristics)
+                    {
+                        Console.WriteLine($"Characteristic: {character.Uuid}");
+                    }
+                }
+                // TODO: Remove
+                Console.WriteLine("Pairing successful");
+            }  
+            else
+                // TODO: Remove
+                Console.WriteLine($"Pairing failed: {result.Status}");
+
+            return result;
         }
 
         #endregion

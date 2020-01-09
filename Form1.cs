@@ -46,6 +46,16 @@ namespace Medic
                     item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; // Or whatever display text you need
                     item.Tag = device;
 
+                    for (int i = 0; i < listViewDevices.Items.Count; i++)
+                    {
+                        if (((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId)
+                        {
+                            listViewDevices.Items.RemoveAt(i);
+                            listViewDevices.Items.Insert(i, item);
+                            return;
+                        }
+                    }
+
                     if (device.Paired)
                         listViewDevices.Items.Add(item).BackColor = Color.GreenYellow;
                     else listViewDevices.Items.Add(item);
@@ -66,6 +76,7 @@ namespace Medic
                             item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; // Or whatever display text you need
                             item.Tag = device;
                             listViewDevices.Items.Insert(i, item);
+                            return;
                         }
                     }
                 }));
@@ -79,8 +90,25 @@ namespace Medic
             watcher.StartListening();
         }
 
+        private void listViewDevices_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (listViewDevices.SelectedItems.Count > 0 && listViewDevices.SelectedItems[0].BackColor == Color.GreenYellow)
+            {
+                buttonPair.Enabled = false;
+                buttonUnpair.Enabled = true;
+            }
+            else
+            {
+                buttonPair.Enabled = true;
+                buttonUnpair.Enabled = false;
+            }
+        }
+
         private void buttonPair_Click(object sender, EventArgs e)
         {
+            if (listViewDevices.SelectedItems.Count == 0)
+                return;
+
             DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listViewDevices.SelectedItems[0].Tag;
             Task.Run(async () =>
             {
@@ -111,19 +139,12 @@ namespace Medic
             });
         }
 
-        private void listViewDevices_SelectedIndexChanged(object sender, EventArgs e)
+        private void buttonUnpair_Click(object sender, EventArgs e)
         {
-            if (listViewDevices.SelectedItems.Count>0 && listViewDevices.SelectedItems[0].BackColor == Color.GreenYellow)
-            {
-                buttonPair.Enabled = false;
-                buttonUnpair.Enabled = true;
-            }
-            else
-            {
-                buttonPair.Enabled = true;
-                buttonUnpair.Enabled = false;
-            }
-                
+            if (listViewDevices.SelectedItems.Count == 0)
+                return;
+
+            DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listViewDevices.SelectedItems[0].Tag;
         }
 
         public void log(String message)
@@ -132,5 +153,6 @@ namespace Medic
                 labelConsole.Text = message;
             });
         }
+
     }
 }

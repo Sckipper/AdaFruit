@@ -95,5 +95,7 @@ namespace Medic
         {
             return $"{ (string.IsNullOrEmpty(Name) ? "[No Name]" : Name ) } [{DeviceId}] ({SignalStrengthInDB})";
         }
+
+
     }
 }

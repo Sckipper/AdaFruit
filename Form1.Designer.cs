@@ -78,6 +78,7 @@
             this.buttonUnpair.TabIndex = 4;
             this.buttonUnpair.Text = "Unpair";
             this.buttonUnpair.UseVisualStyleBackColor = true;
+            this.buttonUnpair.Click += new System.EventHandler(this.buttonUnpair_Click);
             // 
             // MainWindow
             // 
