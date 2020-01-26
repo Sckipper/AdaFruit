@@ -1,0 +1,18 @@
+- Scos datele din 2 giroscoape 
+- Trimis prin bluetooth catre pc
+- Stocare in aplicatie  
+(IAN)
+- Start si stop 
+- Calibrare la inceput dupa inaltime, etc (formule) 
+- Stabilire exercitii
+- Animatie cu miscare
+(FEB)
+- Calculeaza dupa referinta
+(MAR)
+- Ajustari
+(APR)
+(MAI) - deadline
+
+
+
+https://www.youtube.com/watch?v=shq0xsj1ybg
