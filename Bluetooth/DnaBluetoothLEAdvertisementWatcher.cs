@@ -6,6 +6,8 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
+using Windows.Storage.Streams;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace Medic
 {
@@ -359,7 +361,6 @@ namespace Medic
                 args.Accept(); // <-- Could enter a pin in here to accept
             };
 
-
             // Try and pair to the device
             var result = await device.DeviceInformation.Pairing.Custom.PairAsync(
                 // For Contour we should try Provide Pin
@@ -374,12 +375,46 @@ namespace Medic
                 {
                     Console.WriteLine($"Service: {service.Uuid}");
                     var characteristics = await service.GetCharacteristicsAsync();
-                    foreach (var character in characteristics.Characteristics)
+                    foreach (var curCharacteristic in characteristics.Characteristics)
                     {
-                        Console.WriteLine($"Characteristic: {character.Uuid}");
+                        if (curCharacteristic.Uuid.ToString().Equals("6e400002-b5a3-f393-e0a9-e50e24dcca9e"))
+                        {
+                            byte[] ByteArray = System.Text.Encoding.ASCII.GetBytes("!A");
+                            IBuffer buffer = ByteArray.AsBuffer();
+
+                            var result2 = await curCharacteristic.WriteValueWithResultAsync(buffer);
+                            Console.WriteLine(result2);
+                        }
+
+                        //Console.WriteLine($"Characteristic: {curCharacteristic.Uuid}");
+
+                        //if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                        //{
+                        //    var curResult = await curCharacteristic.ReadValueAsync();
+                        //    var reader = DataReader.FromBuffer(curResult.Value);
+                        //    var input = new byte[reader.UnconsumedBufferLength];
+                        //    reader.ReadBytes(input);
+                        //    Console.WriteLine(BitConverter.ToString(input));
+                        //}
                     }
+
                 }
-                // TODO: Remove
+                //// TODO: Remove
+                ///
+
+                //StreamSocket socket = new StreamSocket();
+                //await socket.ConnectAsync(dev.. .HostName, "1");
+                //Details.Text = "Connected to device: " + selectedPeers.DisplayName;  //Details is a TextBlock on screen
+
+                //using (var dataWriter = new DataWriter(socket.OutputStream))
+                //{
+                //    //byte[] DataArray = { 1, 2, 3, 4, 5 };
+                //    dataWriter.WriteByte(1);
+                //    var result = await dataWriter.StoreAsync();
+                //    dataWriter.DetachStream();
+                //}
+                //Details.Text = "Data sent!";
+
                 Console.WriteLine("Pairing successful");
             }  
             else
