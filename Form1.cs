@@ -181,31 +181,32 @@ namespace Medic
 
             foreach (var service in services.Services)
             {
-                if (service.Uuid.ToString().Equals("00001809-0000-1000-8000-00805f9b34fb"))
-                {
-                    var characteristics = await service.GetCharacteristicsAsync();
-                    foreach (var curCharacteristic in characteristics.Characteristics)
-                    {
-                        if (curCharacteristic.Uuid.ToString().Equals("00002a1c-0000-1000-8000-00805f9b34fb"))
-                        {
-                            //if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
-                            //{
-                                var result = await curCharacteristic.ReadValueAsync();
-                                var reader = DataReader.FromBuffer(result.Value);
-                                var input = new byte[reader.UnconsumedBufferLength];
-                                reader.ReadBytes(input);
-                                Console.WriteLine(BitConverter.ToString(input));
-                            //}
-                        }
-                            
-                    }
-                }
-                //Console.WriteLine($"Service: {service.Uuid}");
-                //var characteristics = await service.GetCharacteristicsAsync();
-                //foreach (var curCharacteristic in characteristics.Characteristics)
+                //if (service.Uuid.ToString().Equals(GattService.FloraBatteryService))
                 //{
-                //    Console.WriteLine($"Characteristic: {curCharacteristic.Uuid}");
+                //    var characteristics = await service.GetCharacteristicsAsync();
+                //    foreach (var curCharacteristic in characteristics.Characteristics)
+                //    {
+                //        if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraBatteryCharacteristic))
+                //        {
+                //            //if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                //            //{
+                //            var result = await curCharacteristic.ReadValueAsync();
+                //            var reader = DataReader.FromBuffer(result.Value);
+                //            var input = new byte[reader.UnconsumedBufferLength];
+                //            reader.ReadBytes(input);
+                //            Console.WriteLine(BitConverter.ToString(input));
+                //            //}
+                //        }
+
+                //    }
                 //}
+
+                Console.WriteLine($"Service: {service.Uuid}");
+                var characteristics = await service.GetCharacteristicsAsync();
+                foreach (var curCharacteristic in characteristics.Characteristics)
+                {
+                    Console.WriteLine($"Characteristic: {curCharacteristic.Uuid}");
+                }
             }
         }
 
