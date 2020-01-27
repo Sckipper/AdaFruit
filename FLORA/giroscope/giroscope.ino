@@ -73,8 +73,19 @@ void setup()
   #ifndef ESP8266
     while (!Serial);     // will pause Zero, Leonardo, etc until serial console opens
   #endif
-  // Enable GATT services
+
+
   
+  Serial.println(isOK);
+  isOK = ble.atcommand("AT+FACTORYRESET");
+  Serial.println(isOK);
+  Serial.println("Initialising the GATT module");
+  isOK = ble.atcommand("AT+GATTCLEAR");
+  Serial.println(isOK);
+  isOK = ble.atcommand("AT+GATTADDSERVICE=UUID=0x180F");
+  Serial.println(isOK);
+  isOK = ble.atcommand("AT+GATTADDCHAR=UUID=0x2A19,PROPERTIES=0x10,MIN_LEN=1,VALUE=100");
+  Serial.println(isOK);
 
   // Enable motion sensor
   Serial.println("Initialising the 9DOF module");

@@ -6,8 +6,6 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
-using Windows.Storage.Streams;
-using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace Medic
 {
@@ -334,7 +332,7 @@ namespace Medic
         /// </summary>
         /// <param name="deviceId">The BLE device ID</param>
         /// <returns></returns>
-        public async Task<DevicePairingResult> PairToDeviceAsync(string deviceId)
+        public async Task<DevicePairingResultStatus> PairToDeviceAsync(string deviceId)
         {
             // Get bluetooth device info
             var dev = BluetoothLEDevice.FromIdAsync(deviceId);
@@ -348,7 +346,7 @@ namespace Medic
             // If we are already paired...
             if (device.DeviceInformation.Pairing.IsPaired)
                 // Do nothing
-                return null;
+                return DevicePairingResultStatus.AlreadyPaired;
 
             // Listen out for pairing request
             device.DeviceInformation.Pairing.Custom.PairingRequested += (sender, args) =>
@@ -370,35 +368,6 @@ namespace Medic
 
             if (result.Status == DevicePairingResultStatus.Paired)
             {
-                var services = await device.GetGattServicesAsync();
-                foreach (var service in services.Services)
-                {
-                    Console.WriteLine($"Service: {service.Uuid}");
-                    var characteristics = await service.GetCharacteristicsAsync();
-                    foreach (var curCharacteristic in characteristics.Characteristics)
-                    {
-                        if (curCharacteristic.Uuid.ToString().Equals("6e400002-b5a3-f393-e0a9-e50e24dcca9e"))
-                        {
-                            byte[] ByteArray = System.Text.Encoding.ASCII.GetBytes("!A");
-                            IBuffer buffer = ByteArray.AsBuffer();
-
-                            var result2 = await curCharacteristic.WriteValueWithResultAsync(buffer);
-                            Console.WriteLine(result2);
-                        }
-
-                        //Console.WriteLine($"Characteristic: {curCharacteristic.Uuid}");
-
-                        //if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
-                        //{
-                        //    var curResult = await curCharacteristic.ReadValueAsync();
-                        //    var reader = DataReader.FromBuffer(curResult.Value);
-                        //    var input = new byte[reader.UnconsumedBufferLength];
-                        //    reader.ReadBytes(input);
-                        //    Console.WriteLine(BitConverter.ToString(input));
-                        //}
-                    }
-
-                }
                 //// TODO: Remove
                 ///
 
@@ -421,7 +390,7 @@ namespace Medic
                 // TODO: Remove
                 Console.WriteLine($"Pairing failed: {result.Status}");
 
-            return result;
+            return result.Status;
         }
 
         #endregion

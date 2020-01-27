@@ -1,10 +1,13 @@
 ﻿
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
+using Windows.Devices.Bluetooth;
+using Windows.Storage.Streams;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
 
 namespace Medic
 {
@@ -110,24 +113,29 @@ namespace Medic
                 return;
 
             DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listViewDevices.SelectedItems[0].Tag;
+            DevicePairingResultStatus result = DevicePairingResultStatus.Failed;
             Task.Run(async () =>
             {
                 try
                 {
                     // Try and connect
                     log("Pairing with " + device);
-                    var result = await watcher.PairToDeviceAsync(device.DeviceId);
-
-                    if (result == null || result.Status == DevicePairingResultStatus.Paired)
+                    result = await watcher.PairToDeviceAsync(device.DeviceId);
+                    if (result == DevicePairingResultStatus.Paired)
                     {
                         log("Pairing successful with " + device);
                         listViewDevices.Invoke(new Action(() =>
                         {
                             listViewDevices.SelectedItems[0].BackColor = Color.GreenYellow;
+                            listViewDevices.SelectedIndices.Clear();
                         }));
+
+                        var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
+                        logCaracteristics(dev);
                     }
                     else
-                        log("Pairing failed: " + result.Status);
+                        log("Pairing failed: " + result);
+
                 }
                 catch (Exception ex)
                 {
@@ -139,12 +147,25 @@ namespace Medic
             });
         }
 
-        private void buttonUnpair_Click(object sender, EventArgs e)
+        private async void buttonUnpair_Click(object sender, EventArgs e)
         {
             if (listViewDevices.SelectedItems.Count == 0)
                 return;
 
             DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listViewDevices.SelectedItems[0].Tag;
+            log("Unpairing " + device);
+            var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
+            var result = await dev.DeviceInformation.Pairing.UnpairAsync();
+            if (result == null || result.Status == DeviceUnpairingResultStatus.Unpaired)
+                log("Unpairing successful with" + device);
+            else
+                log("Unpairing unsuccessful with" + device);
+
+            listViewDevices.Invoke(new Action(() =>
+            {
+                listViewDevices.SelectedItems[0].BackColor = default(Color);
+                listViewDevices.SelectedIndices.Clear();
+            }));
         }
 
         public void log(String message)
@@ -152,6 +173,40 @@ namespace Medic
             labelConsole.Invoke((MethodInvoker)delegate {
                 labelConsole.Text = message;
             });
+        }
+
+        protected async void logCaracteristics(BluetoothLEDevice device)
+        {
+            var services = await device.GetGattServicesAsync();
+
+            foreach (var service in services.Services)
+            {
+                if (service.Uuid.ToString().Equals("00001809-0000-1000-8000-00805f9b34fb"))
+                {
+                    var characteristics = await service.GetCharacteristicsAsync();
+                    foreach (var curCharacteristic in characteristics.Characteristics)
+                    {
+                        if (curCharacteristic.Uuid.ToString().Equals("00002a1c-0000-1000-8000-00805f9b34fb"))
+                        {
+                            //if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                            //{
+                                var result = await curCharacteristic.ReadValueAsync();
+                                var reader = DataReader.FromBuffer(result.Value);
+                                var input = new byte[reader.UnconsumedBufferLength];
+                                reader.ReadBytes(input);
+                                Console.WriteLine(BitConverter.ToString(input));
+                            //}
+                        }
+                            
+                    }
+                }
+                //Console.WriteLine($"Service: {service.Uuid}");
+                //var characteristics = await service.GetCharacteristicsAsync();
+                //foreach (var curCharacteristic in characteristics.Characteristics)
+                //{
+                //    Console.WriteLine($"Characteristic: {curCharacteristic.Uuid}");
+                //}
+            }
         }
 
     }
