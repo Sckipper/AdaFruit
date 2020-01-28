@@ -225,19 +225,19 @@ namespace Medic
 
             // NOTE: This can throw a System.Exception for failures
             // Get GATT services that are available
-            var gatt = await device.GetGattServicesAsync().AsTask();
+            //var gatt = await device.GetGattServicesAsync().AsTask();
 
-            // If we have any services...
-            if (gatt.Status == GattCommunicationStatus.Success)
-            {
-                // Loop each GATT service
-                foreach (var service in gatt.Services)
-                {
-                    // This ID contains the GATT Profile Assigned number we want!
-                    // TODO: Get more info and connect
-                    var gattProfileId = service.Uuid;
-                }
-            }
+            //// If we have any services...
+            //if (gatt.Status == GattCommunicationStatus.Success)
+            //{
+            //    // Loop each GATT service
+            //    foreach (var service in gatt.Services)
+            //    {
+            //        // This ID contains the GATT Profile Assigned number we want!
+            //        // TODO: Get more info and connect
+            //        var gattProfileId = service.Uuid;
+            //    }
+            //}
 
             // Return the new device information
             return new DnaBluetoothLEDevice

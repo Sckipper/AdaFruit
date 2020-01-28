@@ -14,6 +14,8 @@ namespace Medic
     public partial class MainWindow : Form
     {
         private DnaBluetoothLEAdvertisementWatcher watcher;
+        private DnaBluetoothLEDevice greenBLE = null;
+        private DnaBluetoothLEDevice purpleBLE = null;
 
         public MainWindow()
         {
@@ -133,9 +135,7 @@ namespace Medic
                             listViewDevices.SelectedIndices.Clear();
                         }));
 
-                        var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
-                        //logCaracteristics(dev);
-                        findDeviceType(dev);
+                        findDeviceTypeAsync(device);
                     }
                     else
                         log("Pairing failed: " + result);
@@ -180,62 +180,42 @@ namespace Medic
             });
         }
 
-        protected async void logCaracteristics(BluetoothLEDevice device)
-        {
-            var services = await device.GetGattServicesAsync();
-
-            foreach (var service in services.Services)
-            {
-                //if (service.Uuid.ToString().Equals(GattService.FloraBatteryService))
-                //{
-                //    var characteristics = await service.GetCharacteristicsAsync();
-                //    foreach (var curCharacteristic in characteristics.Characteristics)
-                //    {
-                //        if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraBatteryCharacteristic))
-                //        {
-                //            //if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
-                //            //{
-                //            var result = await curCharacteristic.ReadValueAsync();
-                //            var reader = DataReader.FromBuffer(result.Value);
-                //            var input = new byte[reader.UnconsumedBufferLength];
-                //            reader.ReadBytes(input);
-                //            Console.WriteLine(BitConverter.ToString(input));
-                //            //}
-                //        }
-
-                //    }
-                //}
-
-                Console.WriteLine($"Service: {service.Uuid}");
-                var characteristics = await service.GetCharacteristicsAsync();
-                foreach (var curCharacteristic in characteristics.Characteristics)
-                {
-                    Console.WriteLine($"Characteristic: {curCharacteristic.Uuid}");
-                }
-            }
-        }
-
         private async void findDeviceTypeAsync(DnaBluetoothLEDevice device)
         {
             var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
-            findDeviceType(dev);
-
-            if (buttonGreen.BackColor == Color.DarkGreen)
-                device.isGreen = true;
-            else if (buttonPurple.BackColor == Color.MediumPurple)
-                device.isPurple = true;
-        }
-
-        private async void findDeviceType(BluetoothLEDevice device)
-        {
             try
             {
-                var services = await device.GetGattServicesAsync();
+                var services = await dev.GetGattServicesAsync();
 
                 foreach (var service in services.Services)
                 {
-
-                    if (service.Uuid.ToString().Equals(GattService.FloraGyroscopeService))
+                    if (service.Uuid.ToString().Equals(GattService.FloraAccelerometerService))
+                    {
+                        var characteristics = await service.GetCharacteristicsAsync();
+                        foreach (var curCharacteristic in characteristics.Characteristics)
+                        {
+                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristicX))
+                                device.accelerometerX = curCharacteristic;
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristicY))
+                                device.accelerometerY = curCharacteristic;
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristicZ))
+                                device.accelerometerZ = curCharacteristic;
+                        }
+                    }
+                    else if (service.Uuid.ToString().Equals(GattService.FloraMagnetometerService))
+                    {
+                        var characteristics = await service.GetCharacteristicsAsync();
+                        foreach (var curCharacteristic in characteristics.Characteristics)
+                        {
+                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristicX))
+                                device.magnetometerX = curCharacteristic;
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristicY))
+                                device.magnetometerY = curCharacteristic;
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristicZ))
+                                device.magnetometerZ = curCharacteristic;
+                        }
+                    }
+                    else if (service.Uuid.ToString().Equals(GattService.FloraGyroscopeService))
                     {
                         var characteristics = await service.GetCharacteristicsAsync();
                         foreach (var curCharacteristic in characteristics.Characteristics)
@@ -261,9 +241,25 @@ namespace Medic
                                         buttonPurple.Text = device.Name;
                                     }
                                 }
+                                device.gyroscopeX = curCharacteristic;
                             }
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristicY))
+                                device.gyroscopeY = curCharacteristic;
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristicZ))
+                                device.gyroscopeZ = curCharacteristic;
                         }
                     }
+                }
+
+                if(buttonGreen.BackColor == Color.DarkGreen && greenBLE == null)
+                    greenBLE = device;
+                else if (buttonPurple.BackColor == Color.MediumPurple && purpleBLE == null)
+                    purpleBLE = device;
+
+                if (greenBLE != null && purpleBLE != null)
+                {
+                    buttonStart.Enabled = true;
+                    buttonStop.Enabled = false;
                 }
             }
             catch (Exception ex)
@@ -271,5 +267,63 @@ namespace Medic
                 labelConsole.Text = "Error reading Services and Characteristics";
             }
         }
+
+        public async void GatherGreenData()
+        {
+            try
+            {
+                if (greenBLE != null)
+                {
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                // log errors
+            }
+        }
+
+        private void buttonStart_Click(object sender, EventArgs e)
+        {
+            bool exit = false;
+            Color errorColor = Color.DarkRed;
+            if (String.IsNullOrWhiteSpace(textBoxName.Text))
+            {
+                textBoxName.BackColor = errorColor;
+                exit = true;
+            }
+            else if (String.IsNullOrWhiteSpace(textBoxSurname.Text))
+            {
+                textBoxSurname.BackColor = errorColor;
+                exit = true;
+            }else if (String.IsNullOrWhiteSpace(textBoxAge.Text))
+            {
+                textBoxAge.BackColor = errorColor;
+                exit = true;
+            }
+            else if (String.IsNullOrWhiteSpace(textBoxHeight.Text))
+            {
+                textBoxHeight.BackColor = errorColor;
+                exit = true;
+            }
+            else if (String.IsNullOrWhiteSpace(textBoxWeight.Text))
+            {
+                textBoxWeight.BackColor = errorColor;
+                exit = true;
+            }
+
+            if (exit)
+                return;
+
+            buttonStart.Enabled = false;
+            buttonStop.Enabled = true;
+        }
+
+        private void buttonStop_Click(object sender, EventArgs e)
+        {
+
+        }
+
+
     }
 }

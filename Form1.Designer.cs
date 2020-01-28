@@ -129,22 +129,26 @@
             // buttonStart
             // 
             this.buttonStart.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.buttonStart.Enabled = false;
             this.buttonStart.Location = new System.Drawing.Point(516, 268);
             this.buttonStart.Name = "buttonStart";
             this.buttonStart.Size = new System.Drawing.Size(195, 50);
             this.buttonStart.TabIndex = 8;
             this.buttonStart.Text = "START";
             this.buttonStart.UseVisualStyleBackColor = true;
+            this.buttonStart.Click += new System.EventHandler(this.buttonStart_Click);
             // 
             // buttonStop
             // 
             this.buttonStop.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.buttonStop.Enabled = false;
             this.buttonStop.Location = new System.Drawing.Point(721, 268);
             this.buttonStop.Name = "buttonStop";
             this.buttonStop.Size = new System.Drawing.Size(195, 50);
             this.buttonStop.TabIndex = 9;
             this.buttonStop.Text = "STOP";
             this.buttonStop.UseVisualStyleBackColor = true;
+            this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
             // labelResult
             // 

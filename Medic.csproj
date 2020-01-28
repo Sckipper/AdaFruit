@@ -83,6 +83,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SensorValue.cs" />
     <Compile Include="Bluetooth\AsyncOperationExtensions.cs" />
     <Compile Include="Bluetooth\DnaBluetoothLEAdvertisementWatcher.cs" />
     <Compile Include="Bluetooth\DnaBluetoothLEDevice.cs" />

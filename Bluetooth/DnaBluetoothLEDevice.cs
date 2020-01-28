@@ -1,4 +1,6 @@
 ﻿using System;
+using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
 
 namespace Medic
 {
@@ -49,9 +51,15 @@ namespace Medic
         /// </summary>
         public string DeviceId { get; }
 
-        public bool isGreen { get; set; }
-
-        public bool isPurple { get; set; }
+        public GattCharacteristic accelerometerX { get; set; }
+        public GattCharacteristic accelerometerY { get; set; }
+        public GattCharacteristic accelerometerZ { get; set; }
+        public GattCharacteristic gyroscopeX { get; set; }
+        public GattCharacteristic gyroscopeY { get; set; }
+        public GattCharacteristic gyroscopeZ { get; set; }
+        public GattCharacteristic magnetometerX { get; set; }
+        public GattCharacteristic magnetometerY { get; set; }
+        public GattCharacteristic magnetometerZ { get; set; }
 
         #endregion
 
