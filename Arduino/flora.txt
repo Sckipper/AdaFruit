@@ -1,8 +1,8 @@
 - Scos datele din 2 giroscoape 
 - Trimis prin bluetooth catre pc
 - Stocare in aplicatie  
-(IAN)
 - Start si stop 
+(IAN)
 - Calibrare la inceput dupa inaltime, etc (formule) 
 - Stabilire exercitii
 - Animatie cu miscare

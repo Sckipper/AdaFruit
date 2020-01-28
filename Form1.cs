@@ -46,7 +46,7 @@ namespace Medic
                 listViewDevices.Invoke(new Action(() =>
                 {
                     ListViewItem item = new ListViewItem();
-                    item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; // Or whatever display text you need
+                    item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; 
                     item.Tag = device;
 
                     for (int i = 0; i < listViewDevices.Items.Count; i++)
@@ -74,9 +74,9 @@ namespace Medic
                     {
                         if ( ((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId)
                         {
-                            listViewDevices.Items.RemoveAt(i); //remove the element
+                            listViewDevices.Items.RemoveAt(i); 
                             ListViewItem item = new ListViewItem();
-                            item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; // Or whatever display text you need
+                            item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; 
                             item.Tag = device;
                             listViewDevices.Items.Insert(i, item);
                             return;
@@ -209,6 +209,5 @@ namespace Medic
                 }
             }
         }
-
     }
 }
