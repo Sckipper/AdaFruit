@@ -46,7 +46,7 @@ namespace Medic
                 listViewDevices.Invoke(new Action(() =>
                 {
                     ListViewItem item = new ListViewItem();
-                    item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; 
+                    item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)";
                     item.Tag = device;
 
                     for (int i = 0; i < listViewDevices.Items.Count; i++)
@@ -60,7 +60,10 @@ namespace Medic
                     }
 
                     if (device.Paired)
+                    {
                         listViewDevices.Items.Add(item).BackColor = Color.GreenYellow;
+                        findDeviceTypeAsync(device);
+                    }
                     else listViewDevices.Items.Add(item);
                 }));
             };
@@ -70,13 +73,13 @@ namespace Medic
                 log("Device name changed: " + device);
                 listViewDevices.Invoke(new Action(() =>
                 {
-                    for (int i=0; i< listViewDevices.Items.Count; i++)
+                    for (int i = 0; i < listViewDevices.Items.Count; i++)
                     {
-                        if ( ((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId)
+                        if (((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId)
                         {
-                            listViewDevices.Items.RemoveAt(i); 
+                            listViewDevices.Items.RemoveAt(i);
                             ListViewItem item = new ListViewItem();
-                            item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)"; 
+                            item.Text = device.Name + "   (" + device.SignalStrengthInDB + "dB)";
                             item.Tag = device;
                             listViewDevices.Items.Insert(i, item);
                             return;
@@ -131,7 +134,8 @@ namespace Medic
                         }));
 
                         var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
-                        logCaracteristics(dev);
+                        //logCaracteristics(dev);
+                        findDeviceType(dev);
                     }
                     else
                         log("Pairing failed: " + result);
@@ -170,7 +174,8 @@ namespace Medic
 
         public void log(String message)
         {
-            labelConsole.Invoke((MethodInvoker)delegate {
+            labelConsole.Invoke((MethodInvoker)delegate
+            {
                 labelConsole.Text = message;
             });
         }
@@ -207,6 +212,63 @@ namespace Medic
                 {
                     Console.WriteLine($"Characteristic: {curCharacteristic.Uuid}");
                 }
+            }
+        }
+
+        private async void findDeviceTypeAsync(DnaBluetoothLEDevice device)
+        {
+            var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
+            findDeviceType(dev);
+
+            if (buttonGreen.BackColor == Color.DarkGreen)
+                device.isGreen = true;
+            else if (buttonPurple.BackColor == Color.MediumPurple)
+                device.isPurple = true;
+        }
+
+        private async void findDeviceType(BluetoothLEDevice device)
+        {
+            try
+            {
+                var services = await device.GetGattServicesAsync();
+
+                foreach (var service in services.Services)
+                {
+
+                    if (service.Uuid.ToString().Equals(GattService.FloraGyroscopeService))
+                    {
+                        var characteristics = await service.GetCharacteristicsAsync();
+                        foreach (var curCharacteristic in characteristics.Characteristics)
+                        {
+                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristicX))
+                            {
+                                if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                                {
+                                    var result = await curCharacteristic.ReadValueAsync();
+                                    var reader = DataReader.FromBuffer(result.Value);
+                                    byte[] input = new byte[reader.UnconsumedBufferLength];
+                                    reader.ReadBytes(input);
+                                    float gyroX = BitConverter.ToSingle(input, 0);
+                                    Console.WriteLine(gyroX);
+                                    if (gyroX != 0) //isGreen
+                                    {
+                                        buttonGreen.BackColor = Color.DarkGreen;
+                                        buttonGreen.Text = device.Name;
+                                    }
+                                    else //isPurple
+                                    {
+                                        buttonPurple.BackColor = Color.MediumPurple;
+                                        buttonPurple.Text = device.Name;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                labelConsole.Text = "Error reading Services and Characteristics";
             }
         }
     }

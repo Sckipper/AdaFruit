@@ -49,6 +49,10 @@ namespace Medic
         /// </summary>
         public string DeviceId { get; }
 
+        public bool isGreen { get; set; }
+
+        public bool isPurple { get; set; }
+
         #endregion
 
         #region Constructor
