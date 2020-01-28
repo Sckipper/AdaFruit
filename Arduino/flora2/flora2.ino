@@ -6,29 +6,30 @@
 #include "Adafruit_BLEGatt.h"
 #include "Adafruit_LSM9DS0.h"
 
+#include <Adafruit_Sensor.h>
+#include <Adafruit_LSM303.h>
+
 #if SOFTWARE_SERIAL_AVAILABLE
   #include <SoftwareSerial.h>
 #endif
 
-
 #define VERBOSE_MODE                   false 
 #define BLUEFRUIT_UART_MODE_PIN        12    
 
+bool isLSM303 = false;
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
+Adafruit_LSM303 lsm303;
 Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN);
 Adafruit_BLEGatt gatt(ble);
 
-int32_t AccelServiceId;
 int32_t AccelXCharId;
 int32_t AccelYCharId;
 int32_t AccelZCharId;
 
-int32_t MagServiceId;
 int32_t MagXCharId;
 int32_t MagYCharId;
 int32_t MagZCharId;
 
-int32_t GyroServiceId;
 int32_t GyroXCharId;
 int32_t GyroYCharId;
 int32_t GyroZCharId;
@@ -86,9 +87,15 @@ void setup(void)
 
   // Enable motion sensor
   Serial.println("Initialising the 9DOF module");
-  if (!lsm.begin())
-    error(F("Oops ... unable to initialize the LSM9DS0. Check your wiring!"));
-  Serial.println("Found LSM9DS0 9DOF");
+  if (!lsm.begin()){
+    Serial.println(F("Unable to initialize the LSM9DS0. Trying LSM303"));
+    isLSM303 = true;
+    if (!lsm303.begin())
+      error(F("Unable to initialize LSM9DS0 and LSM303. Check your wiring!"));
+  }else {
+    Serial.println("Found LSM9DS0 9DOF");
+  }
+    
   
   /* Initialise the module */
   Serial.print(F("Initialising the Bluefruit LE module: "));
@@ -114,65 +121,54 @@ void setup(void)
 
   //Accelerometer
   Serial.println(F(" Add Accelerometer service"));
-  AccelServiceId = gatt.addService(0x3000);
-  if (AccelServiceId == 0)
+  if (gatt.addService(0x3000) == 0)
     error(F("Fail"));
 
+  bool success = false;
   Serial.println(F("Adding the accelerometer X characteristic"));
-  AccelXCharId = gatt.addCharacteristic(0x3001, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (AccelXCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3001, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &AccelXCharId))
     error(F("Fail"));
 
   Serial.println(F("Adding the accelerometer Y characteristic"));
-  AccelYCharId = gatt.addCharacteristic(0x3002, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (AccelYCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3002, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &AccelYCharId))
     error(F("Fail"));
 
   Serial.println(F("Adding the accelerometer Z characteristic"));
-  AccelZCharId = gatt.addCharacteristic(0x3003, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (AccelZCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3003, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &AccelZCharId))
     error(F("Fail"));
 
   // Gyroscope
   Serial.println(F(" Add Gyroscope service"));
-  GyroServiceId = gatt.addService(0x3004);
-  if (GyroServiceId == 0)
+  if (gatt.addService(0x3004) == 0)
     error(F("Fail"));
 
   Serial.println(F("Adding the Gyroscope X characteristic"));
-  GyroXCharId = gatt.addCharacteristic(0x3005, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (GyroXCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3005, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &GyroXCharId))
     error(F("Fail"));
 
   Serial.println(F("Adding the Gyroscope Y characteristic"));
-  GyroYCharId = gatt.addCharacteristic(0x3006, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (GyroYCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3006, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &GyroYCharId))
     error(F("Fail"));
 
   Serial.println(F("Adding the Gyroscope Z characteristic"));
-  GyroZCharId = gatt.addCharacteristic(0x3007, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (GyroZCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3007, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &GyroZCharId))
     error(F("Fail"));
 
   //Magnetometer
   Serial.println(F(" Add Magnetometer service"));
-  MagServiceId = gatt.addService(0x3008);
-  if (MagServiceId == 0)
+  if (gatt.addService(0x3008) == 0)
     error(F("Fail"));
 
   Serial.println(F("Adding the Magnetometer X characteristic"));
-  MagXCharId = gatt.addCharacteristic(0x3009, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (MagXCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3009, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &MagXCharId))
     error(F("Fail"));
 
   Serial.println(F("Adding the Magnetometer Y characteristic"));
-  MagYCharId = gatt.addCharacteristic(0x3010, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (MagYCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3010, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &MagYCharId))
     error(F("Fail"));
 
   Serial.println(F("Adding the Magnetometer Z characteristic"));
-  MagZCharId = gatt.addCharacteristic(0x3011, GATT_CHARS_PROPERTIES_INDICATE, 5, 5, BLE_DATATYPE_BYTEARRAY);
-  if (MagZCharId == 0)
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3011, PROPERTIES=0x02, MIN_LEN=5, MAX_LEN=5, VALUE=0"), &MagZCharId))
     error(F("Fail"));
     
   /* Reset the device for the new service setting changes to take effect */
@@ -185,29 +181,30 @@ void setup(void)
 
 void loop(void)
 { 
-  lsm.read();
+  if(!isLSM303){
+      lsm.read();
+      accelX.nr = lsm.accelData.x;
+      accelY.nr = lsm.accelData.y;
+      accelZ.nr = lsm.accelData.z;
+      magX.nr = lsm.magData.x;
+      magY.nr = lsm.magData.y;
+      magZ.nr = lsm.magData.z;
+      gyroX.nr = lsm.gyroData.x;
+      gyroY.nr = lsm.gyroData.y;
+      gyroZ.nr = lsm.gyroData.z;
+  }else {
+      lsm303.read();
+      accelX.nr = lsm303.accelData.x;
+      accelY.nr = lsm303.accelData.y;
+      accelZ.nr = lsm303.accelData.z;
+      magX.nr = lsm303.magData.x;
+      magY.nr = lsm303.magData.y;
+      magZ.nr = lsm303.magData.z; 
+      gyroX.nr = 0;
+      gyroY.nr = 0;
+      gyroZ.nr = 0;
+  }
   
-//  Serial.print("Accel X: "); Serial.print((int)lsm.accelData.x); Serial.print(" ");
-//  Serial.print("Y: "); Serial.print((int)lsm.accelData.y);       Serial.print(" ");
-//  Serial.print("Z: "); Serial.println((int)lsm.accelData.z);     Serial.print(" ");
-//  Serial.print("Mag X: "); Serial.print((int)lsm.magData.x);     Serial.print(" ");
-//  Serial.print("Y: "); Serial.print((int)lsm.magData.y);         Serial.print(" ");
-//  Serial.print("Z: "); Serial.println((int)lsm.magData.z);       Serial.print(" ");
-//  Serial.print("Gyro X: "); Serial.print((int)lsm.gyroData.x);   Serial.print(" ");
-//  Serial.print("Y: "); Serial.print((int)lsm.gyroData.y);        Serial.print(" ");
-//  Serial.print("Z: "); Serial.println((int)lsm.gyroData.z);      Serial.println(" ");
-//  Serial.print("Temp: "); Serial.print((int)lsm.temperature);    Serial.println(" ");
-  
-  accelX.nr = lsm.accelData.x;
-  accelY.nr = lsm.accelData.y;
-  accelZ.nr = lsm.accelData.z;
-  magX.nr = lsm.magData.x;
-  magY.nr = lsm.magData.y;
-  magZ.nr = lsm.magData.z;
-  gyroX.nr = lsm.gyroData.x;
-  gyroY.nr = lsm.gyroData.y;
-  gyroZ.nr = lsm.gyroData.z;
-
   gatt.setChar(AccelXCharId, accelX.by, 5);
   gatt.setChar(AccelYCharId, accelY.by, 5);
   gatt.setChar(AccelZCharId, accelZ.by, 5);
@@ -219,4 +216,14 @@ void loop(void)
   gatt.setChar(GyroXCharId, gyroX.by, 5);
   gatt.setChar(GyroYCharId, gyroY.by, 5);
   gatt.setChar(GyroZCharId, gyroZ.by, 5);
+
+//  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.print(" ");
+//  Serial.print("Y: "); Serial.print(accelY.nr);       Serial.print(" ");
+//  Serial.print("Z: "); Serial.println(accelZ.nr);     Serial.print(" ");
+//  Serial.print("Mag X: "); Serial.print(magX.nr);     Serial.print(" ");
+//  Serial.print("Y: "); Serial.print(magY.nr);         Serial.print(" ");
+//  Serial.print("Z: "); Serial.println(magZ.nr);       Serial.print(" ");
+//  Serial.print("Gyro X: "); Serial.print(gyroX.nr);   Serial.print(" ");
+//  Serial.print("Y: "); Serial.print(gyroY.nr);        Serial.print(" ");
+//  Serial.print("Z: "); Serial.println(gyroZ.nr);      Serial.println(" ");
 }
