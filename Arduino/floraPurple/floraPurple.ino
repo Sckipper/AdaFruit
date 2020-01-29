@@ -18,9 +18,8 @@ Adafruit_LSM303 lsm303;
 Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN);
 Adafruit_BLEGatt gatt(ble);
 
-int32_t AccelCharId;
-int32_t MagCharId;
-byte result[12];
+int32_t AllCharId;
+byte result[18];
 
 // Helper region
 void error(const __FlashStringHelper*err) {
@@ -30,7 +29,7 @@ void error(const __FlashStringHelper*err) {
 
 typedef union
 {
- float nr;
+ int16_t nr;
  uint8_t by[4];
 } FLOATUNION_t;
 // END Helper region
@@ -80,12 +79,8 @@ void setup(void)
   if (gatt.addService(0x3000) == 0)
     error(F("Fail"));
     
-  Serial.println(F("Adding the accelerometer characteristic"));
-  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3001, PROPERTIES=0x02, MIN_LEN=12, MAX_LEN=12, VALUE=0"), &AccelCharId))
-    error(F("Fail"));
-    
-  Serial.println(F("Adding the Magnetometer characteristic"));
-  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3002, PROPERTIES=0x02, MIN_LEN=12, MAX_LEN=12, VALUE=0"), &MagCharId))
+  Serial.println(F("Adding the All characteristics"));
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3001, PROPERTIES=0x02, MIN_LEN=18, MAX_LEN=18, VALUE=0"), &AllCharId))
     error(F("Fail"));
     
   /* Reset the device for the new service setting changes to take effect */
@@ -107,14 +102,14 @@ void loop(void)
   magY.nr = lsm303.magData.y;
   magZ.nr = lsm303.magData.z;
   
-  memcpy(result, accelX.by, 4);
-  memcpy(result+4, accelY.by, 4);
-  memcpy(result+8, accelZ.by, 4);
-  gatt.setChar(AccelCharId, result, 12);
-  memcpy(result, magX.by, 4);
-  memcpy(result+4, magY.by, 4);
-  memcpy(result+8, magZ.by, 4);
-  gatt.setChar(MagCharId, result, 12);
+  memcpy(result, accelX.by, 2);
+  memcpy(result+2, accelY.by, 2);
+  memcpy(result+4, accelZ.by, 2);
+  memcpy(result+6, magX.by, 2);
+  memcpy(result+8, magY.by, 2);
+  memcpy(result+10, magZ.by, 2);
+  
+  gatt.setChar(AllCharId, result, 18);
 
 //  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.print(" ");
 //  Serial.print("Y: "); Serial.print(accelY.nr);       Serial.print(" ");

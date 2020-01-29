@@ -17,10 +17,8 @@ Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
 Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN);
 Adafruit_BLEGatt gatt(ble);
 
-int32_t AccelCharId;
-int32_t MagCharId;
-int32_t GyroCharId;
-byte result[12];
+int32_t AllCharId;
+byte result[18];
 
 // Helper region
 void error(const __FlashStringHelper*err) {
@@ -30,8 +28,8 @@ void error(const __FlashStringHelper*err) {
 
 typedef union
 {
- float nr;
- uint8_t by[4];
+ int16_t nr;
+ uint8_t by[2];
 } FLOATUNION_t;
 // END Helper region
 
@@ -104,18 +102,10 @@ void setup(void)
   if (gatt.addService(0x3000) == 0)
     error(F("Fail"));
     
-  Serial.println(F("Adding the Accelerometer characteristic"));
-  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3001, PROPERTIES=0x02, MIN_LEN=12, MAX_LEN=12, VALUE=0"), &AccelCharId))
+  Serial.println(F("Adding the AllData characteristic"));
+  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3001, PROPERTIES=0x02, MIN_LEN=18, MAX_LEN=18, VALUE=0"), &AllCharId))
     error(F("Fail"));
 
-  Serial.println(F("Adding the Magnetometer characteristic"));
-  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3002, PROPERTIES=0x02, MIN_LEN=12, MAX_LEN=12, VALUE=0"), &MagCharId))
-    error(F("Fail"));
-    
-  Serial.println(F("Adding the Gyroscope characteristic"));
-  if (! ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID=0x3003, PROPERTIES=0x02, MIN_LEN=12, MAX_LEN=12, VALUE=0"), &GyroCharId))
-    error(F("Fail"));
-    
   /* Reset the device for the new service setting changes to take effect */
   Serial.println(F("Performing a SW reset (service changes require a reset)"));
   ble.reset();
@@ -138,19 +128,20 @@ void loop(void)
   gyroY.nr = lsm.gyroData.y;
   gyroZ.nr = lsm.gyroData.z;
   
-  memcpy(result, accelX.by, 4);
-  memcpy(result+4, accelY.by, 4);
-  memcpy(result+8, accelZ.by, 4);
-  gatt.setChar(AccelCharId, result, 12);
-  memcpy(result, magX.by, 4);
-  memcpy(result+4, magY.by, 4);
-  memcpy(result+8, magZ.by, 4);
-  gatt.setChar(MagCharId, result, 12);
-  memcpy(result, gyroX.by, 4);
-  memcpy(result+4, gyroY.by, 4);
-  memcpy(result+8, gyroZ.by, 4);
-  gatt.setChar(GyroCharId, result, 12);
+  memcpy(result, accelX.by, 2);
+  memcpy(result+2, accelY.by, 2);
+  memcpy(result+4, accelZ.by, 2);
 
+  memcpy(result+6, magX.by, 2);
+  memcpy(result+8, magY.by, 2);
+  memcpy(result+10, magZ.by, 2);
+
+  memcpy(result+12, gyroX.by, 2);
+  memcpy(result+14, gyroY.by, 2);
+  memcpy(result+16, gyroZ.by, 2);
+  
+  gatt.setChar(AllCharId, result, 18);
+//
 //  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.print(" ");
 //  Serial.print("Y: "); Serial.print(accelY.nr);       Serial.print(" ");
 //  Serial.print("Z: "); Serial.println(accelZ.nr);     Serial.print(" ");
