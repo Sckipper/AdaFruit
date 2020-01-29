@@ -72,7 +72,6 @@
             // 
             // listViewDevices
             // 
-            this.listViewDevices.Alignment = System.Windows.Forms.ListViewAlignment.Left;
             this.listViewDevices.GridLines = true;
             this.listViewDevices.HideSelection = false;
             this.listViewDevices.Location = new System.Drawing.Point(12, 12);

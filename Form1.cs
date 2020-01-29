@@ -17,7 +17,7 @@ namespace Medic
         private DnaBluetoothLEDevice greenBLE = null;
         private DnaBluetoothLEDevice purpleBLE = null;
         private Thread readGreenDataThread = null;
-        private Thread readPurpleDataThread;
+        private Thread readPurpleDataThread = null;
         private Color greenColor = Color.GreenYellow;
         private Color purpleColor = Color.Violet;
 
@@ -67,7 +67,7 @@ namespace Medic
 
                     if (device.Paired)
                     {
-                        listViewDevices.Items.Add(item).Selected = true;
+                        listViewDevices.Items.Add(item);
                         findDeviceTypeAsync(device);
                     }
                     else listViewDevices.Items.Add(item);
@@ -157,6 +157,10 @@ namespace Medic
             DnaBluetoothLEDevice device = (DnaBluetoothLEDevice)listViewDevices.SelectedItems[0].Tag;
             log("Unpairing " + device);
             var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
+
+            if (buttonStop.Enabled == true && ((greenBLE!= null && dev.DeviceId == greenBLE.DeviceId) || (purpleBLE != null && dev.DeviceId == purpleBLE.DeviceId)))
+                buttonStop.PerformClick();
+
             var result = await dev.DeviceInformation.Pairing.UnpairAsync();
             if (result == null || result.Status == DeviceUnpairingResultStatus.Unpaired)
                 log("Unpairing successful with" + device);
@@ -206,54 +210,62 @@ namespace Medic
                         var characteristics = await service.GetCharacteristicsAsync();
                         foreach (var curCharacteristic in characteristics.Characteristics)
                         {
-                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristic))
-                                device.accelerometer = curCharacteristic;
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristic))
-                                device.magnetometer = curCharacteristic;
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristic))
-                                device.gyroscope = curCharacteristic;
-                        }
-
-                        if (characteristics.Characteristics.Count == 3 && device.accelerometer != null && device.magnetometer != null && device.gyroscope != null) //isGreen
-                        {
-                            buttonGreen.Invoke(new Action(() =>
+                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAllrCharacteristics))
                             {
-                                buttonGreen.BackColor = greenColor;
-                                buttonGreen.Text = device.Name;
-                            }));
-                            listViewDevices.Invoke(new Action(() =>
-                            {
-                                if (listViewDevices.SelectedItems.Count > 0)
+                                device.caracteristic = curCharacteristic;
+                                var result = await curCharacteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
+                                if (result.Status == GattCommunicationStatus.Success)
                                 {
-                                    listViewDevices.SelectedItems[0].BackColor = greenColor;
-                                    listViewDevices.SelectedIndices.Clear();
-                                }
-                            }));
+                                    byte[] input = new byte[18];
+                                    DataReader.FromBuffer(result.Value).ReadBytes(input);
+                                    Console.WriteLine(BitConverter.ToString(input));
+                                    if (BitConverter.ToInt16(input, 0) != 0 && BitConverter.ToInt16(input, 12) != 0 && greenBLE == null) //isGreen
+                                    {
+                                        buttonGreen.Invoke(new Action(() =>
+                                        {
+                                            buttonGreen.BackColor = greenColor;
+                                            buttonGreen.Text = device.Name;
+                                        }));
+                                        listViewDevices.Invoke(new Action(() =>
+                                        {
+                                            for (int i = 0; i < listViewDevices.Items.Count; i++)
+                                            {
+                                                if (((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId)
+                                                {
+                                                    listViewDevices.Items[i].BackColor = greenColor;
+                                                    listViewDevices.SelectedIndices.Clear();
+                                                }
+                                            }
+                                        }));
 
-                        }
-                        else if (characteristics.Characteristics.Count == 2 && device.accelerometer != null && device.magnetometer != null)//isPurple
-                        {
-                            buttonPurple.Invoke(new Action(() =>
-                            {
-                                buttonPurple.BackColor = purpleColor;
-                                buttonPurple.Text = device.Name;
-                            }));
-                            listViewDevices.Invoke(new Action(() =>
-                            {
-                                if (listViewDevices.SelectedItems.Count > 0)
-                                {
-                                    listViewDevices.SelectedItems[0].BackColor = purpleColor;
-                                    listViewDevices.SelectedIndices.Clear();
+                                        greenBLE = device;
+                                    }
+                                    else if (BitConverter.ToInt16(input, 12) == 0 && BitConverter.ToInt16(input, 0) != 0 && purpleBLE == null) //isPurple
+                                    {
+                                        buttonPurple.Invoke(new Action(() =>
+                                        {
+                                            buttonPurple.BackColor = purpleColor;
+                                            buttonPurple.Text = device.Name;
+                                        }));
+                                        listViewDevices.Invoke(new Action(() =>
+                                        {
+                                            for (int i = 0; i < listViewDevices.Items.Count; i++)
+                                            {
+                                                if (((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId)
+                                                {
+                                                    listViewDevices.Items[i].BackColor = purpleColor;
+                                                    listViewDevices.SelectedIndices.Clear();
+                                                }
+                                            }
+                                        }));
+
+                                        purpleBLE = device;
+                                    }
                                 }
-                            }));
+                            }
                         }
                     }
                 }
-
-                if (buttonGreen.BackColor == greenColor && greenBLE == null)
-                    greenBLE = device;
-                else if (buttonPurple.BackColor == purpleColor && purpleBLE == null)
-                    purpleBLE = device;
 
                 if (greenBLE != null)//&& purpleBLE != null)
                 {
@@ -266,23 +278,28 @@ namespace Medic
                         buttonStop.Enabled = false;
                     }));
                 }
-
-                listViewDevices.Invoke(new Action(() =>
-                {
-                    if (listViewDevices.SelectedItems.Count > 0 && listViewDevices.SelectedItems[0].BackColor == SystemColors.Window)
-                    {
-                        listViewDevices.SelectedItems[0].BackColor = Color.LightSkyBlue;
-                        listViewDevices.SelectedIndices.Clear();
-                    }
-                }));
             }
             catch (Exception ex)
             {
                 log(ex.Message, Color.Red);
             }
+            finally
+            {
+                listViewDevices.Invoke(new Action(() =>
+                {
+                    for (int i = 0; i < listViewDevices.Items.Count; i++)
+                    {
+                        if (((DnaBluetoothLEDevice)listViewDevices.Items[i].Tag).DeviceId == device.DeviceId && listViewDevices.Items[i].BackColor == SystemColors.Window)
+                        {
+                            listViewDevices.Items[i].BackColor = Color.Cyan;
+                            listViewDevices.SelectedIndices.Clear();
+                        }
+                    }
+                }));
+            }
         }
 
-        public async void readGreenData(object dev)
+        public async void readData(object dev)
         {
             var device = (DnaBluetoothLEDevice)dev;
             try
@@ -293,49 +310,26 @@ namespace Medic
                     SensorValue gyro = new SensorValue();
                     SensorValue magneto = new SensorValue();
                     GattReadResult result;
-                    byte[] input = new byte[12];
+                    byte[] input = new byte[18];
 
                     while (true)
                     {
-                        //Accelerometer
-                        if (device.accelerometer != null && device.accelerometer.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                        if (device.caracteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
                         {
-                            result = await greenBLE.accelerometer.ReadValueAsync(BluetoothCacheMode.Uncached);
+                            result = await device.caracteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
                             if (result.Status == GattCommunicationStatus.Success)
                             {
                                 DataReader.FromBuffer(result.Value).ReadBytes(input);
-                                //Console.WriteLine(BitConverter.ToString(input));
-                                accel.x = BitConverter.ToSingle(input, 0);
-                                accel.y = BitConverter.ToSingle(input, 4);
-                                accel.z = BitConverter.ToSingle(input, 8);
-                            }
-                        }
-
-                        ////Magnetometer
-                        if (device.magnetometer != null && device.magnetometer.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
-                        {
-                            result = await greenBLE.magnetometer.ReadValueAsync(BluetoothCacheMode.Uncached);
-                            if (result.Status == GattCommunicationStatus.Success)
-                            {
-                                DataReader.FromBuffer(result.Value).ReadBytes(input);
-                                //Console.WriteLine(BitConverter.ToString(input));
-                                magneto.x = BitConverter.ToSingle(input, 0);
-                                magneto.y = BitConverter.ToSingle(input, 4);
-                                magneto.z = BitConverter.ToSingle(input, 8);
-                            }
-                        }
-
-                        ////Gyroscope
-                        if (device.gyroscope != null && device.gyroscope.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
-                        {
-                            result = await greenBLE.gyroscope.ReadValueAsync(BluetoothCacheMode.Uncached);
-                            if (result.Status == GattCommunicationStatus.Success)
-                            {
-                                DataReader.FromBuffer(result.Value).ReadBytes(input);
-                                //Console.WriteLine(BitConverter.ToString(input));
-                                gyro.x = BitConverter.ToSingle(input, 0);
-                                gyro.y = BitConverter.ToSingle(input, 4);
-                                gyro.z = BitConverter.ToSingle(input, 8);
+                                Console.WriteLine(BitConverter.ToString(input));
+                                accel.x = BitConverter.ToInt16(input, 0);
+                                accel.y = BitConverter.ToInt16(input, 2);
+                                accel.z = BitConverter.ToInt16(input, 4);
+                                magneto.x = BitConverter.ToInt16(input, 6);
+                                magneto.y = BitConverter.ToInt16(input, 8);
+                                magneto.z = BitConverter.ToInt16(input, 10);
+                                gyro.x = BitConverter.ToInt16(input, 12);
+                                gyro.y = BitConverter.ToInt16(input, 14);
+                                gyro.z = BitConverter.ToInt16(input, 16);
                             }
                         }
 
@@ -353,6 +347,13 @@ namespace Medic
 
         private void buttonStart_Click(object sender, EventArgs e)
         {
+            if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
+            {
+                buttonStart.Enabled = false;
+                buttonStop.Enabled = false;
+                return;
+            }
+
             bool exit = false;
             Color errorColor = Color.OrangeRed;
             if (String.IsNullOrWhiteSpace(textBoxName.Text))
@@ -387,8 +388,8 @@ namespace Medic
             buttonStart.Enabled = false;
             buttonStop.Enabled = true;
 
-            readGreenDataThread = new Thread(new ParameterizedThreadStart(readGreenData));
-            readGreenDataThread.Start(purpleBLE);
+            readPurpleDataThread = new Thread(new ParameterizedThreadStart(readData));
+            readPurpleDataThread.Start(purpleBLE);
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
@@ -400,7 +401,19 @@ namespace Medic
                 buttonStart.Enabled = true;
                 buttonStop.Enabled = false;
             }
+            else if (readPurpleDataThread != null)
+            {
+                readPurpleDataThread.Abort();
+                readPurpleDataThread = null;
+                buttonStart.Enabled = true;
+                buttonStop.Enabled = false;
+            }
 
+            if(String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
+            {
+                buttonStart.Enabled = false;
+                buttonStop.Enabled = false;
+            }
         }
     }
 }

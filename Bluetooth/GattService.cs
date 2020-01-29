@@ -9,9 +9,7 @@ namespace Medic
     public class GattService
     {
         public static readonly String FloraSensorService = "00003000-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraAccelerometerCharacteristic = "00003001-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraMagnetometerCharacteristic = "00003002-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraGyroscopeCharacteristic = "00003003-0000-1000-8000-00805f9b34fb";
+        public static readonly String FloraAllrCharacteristics = "00003001-0000-1000-8000-00805f9b34fb";
 
         #region Public Properties
 

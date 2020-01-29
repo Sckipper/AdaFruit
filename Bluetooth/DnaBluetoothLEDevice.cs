@@ -51,9 +51,7 @@ namespace Medic
         /// </summary>
         public string DeviceId { get; }
 
-        public GattCharacteristic accelerometer { get; set; }
-        public GattCharacteristic gyroscope { get; set; }
-        public GattCharacteristic magnetometer { get; set; }
+        public GattCharacteristic caracteristic { get; set; }
 
         #endregion
 
