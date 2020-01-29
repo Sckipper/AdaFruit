@@ -77,16 +77,14 @@ void setup(void)
   Serial.println("Initialising the 9DOF module");
   if (!lsm.begin())
       error(F("Unable to initialize LSM9DS0. Check your wiring!"));
-   Serial.println("Found LSM9DS0 9DOF");
 
   /* Initialise the module */
-  Serial.print(F("Initialising the Bluefruit LE module: "));
+  Serial.println(F("Initialising the Bluefruit LE module"));
   if (!ble.begin(VERBOSE_MODE))
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
-  Serial.println( F("Found Bluefruit LE") );
 
   /* Perform a factory reset to make sure everything is in a known state */
-  Serial.println(F("Performing a factory reset: "));
+  Serial.println(F("Performing a factory reset"));
   if (!ble.factoryReset())
        error(F("Couldn't factory reset"));
 
@@ -119,7 +117,7 @@ void setup(void)
     error(F("Fail"));
     
   /* Reset the device for the new service setting changes to take effect */
-  Serial.println(F("Performing a SW reset (service changes require a reset): "));
+  Serial.println(F("Performing a SW reset (service changes require a reset)"));
   ble.reset();
 
   Serial.println( F("Finish Initialization, start sending data!") );
@@ -147,11 +145,11 @@ void loop(void)
   memcpy(result, magX.by, 4);
   memcpy(result+4, magY.by, 4);
   memcpy(result+8, magZ.by, 4);
-  gatt.setChar(MagCharId, magX.by, 12);
+  gatt.setChar(MagCharId, result, 12);
   memcpy(result, gyroX.by, 4);
   memcpy(result+4, gyroY.by, 4);
   memcpy(result+8, gyroZ.by, 4);
-  gatt.setChar(GyroCharId, gyroX.by, 12);
+  gatt.setChar(GyroCharId, result, 12);
 
 //  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.print(" ");
 //  Serial.print("Y: "); Serial.print(accelY.nr);       Serial.print(" ");
