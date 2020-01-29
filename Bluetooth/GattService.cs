@@ -8,20 +8,10 @@ namespace Medic
     /// </summary>
     public class GattService
     {
-        public static readonly String FloraAccelerometerService = "00003000-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraAccelerometerCharacteristicX = "00003001-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraAccelerometerCharacteristicY = "00003002-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraAccelerometerCharacteristicZ = "00003003-0000-1000-8000-00805f9b34fb";
-
-        public static readonly String FloraGyroscopeService = "00003004-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraGyroscopeCharacteristicX = "00003005-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraGyroscopeCharacteristicY = "00003006-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraGyroscopeCharacteristicZ = "00003007-0000-1000-8000-00805f9b34fb";
-
-        public static readonly String FloraMagnetometerService = "00003008-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraMagnetometerCharacteristicX = "00003009-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraMagnetometerCharacteristicY = "00003010-0000-1000-8000-00805f9b34fb";
-        public static readonly String FloraMagnetometerCharacteristicZ = "00003011-0000-1000-8000-00805f9b34fb";
+        public static readonly String FloraSensorService = "00003000-0000-1000-8000-00805f9b34fb";
+        public static readonly String FloraAccelerometerCharacteristic = "00003001-0000-1000-8000-00805f9b34fb";
+        public static readonly String FloraMagnetometerCharacteristic = "00003002-0000-1000-8000-00805f9b34fb";
+        public static readonly String FloraGyroscopeCharacteristic = "00003003-0000-1000-8000-00805f9b34fb";
 
         #region Public Properties
 

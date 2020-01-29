@@ -6,8 +6,8 @@ using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Bluetooth;
 using Windows.Storage.Streams;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using System.Threading;
 
 namespace Medic
 {
@@ -16,6 +16,10 @@ namespace Medic
         private DnaBluetoothLEAdvertisementWatcher watcher;
         private DnaBluetoothLEDevice greenBLE = null;
         private DnaBluetoothLEDevice purpleBLE = null;
+        private Thread readGreenDataThread = null;
+        private Thread readPurpleDataThread;
+        private Color greenColor = Color.GreenYellow;
+        private Color purpleColor = Color.Violet;
 
         public MainWindow()
         {
@@ -63,7 +67,7 @@ namespace Medic
 
                     if (device.Paired)
                     {
-                        listViewDevices.Items.Add(item).BackColor = Color.GreenYellow;
+                        listViewDevices.Items.Add(item).Selected = true;
                         findDeviceTypeAsync(device);
                     }
                     else listViewDevices.Items.Add(item);
@@ -100,7 +104,7 @@ namespace Medic
 
         private void listViewDevices_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (listViewDevices.SelectedItems.Count > 0 && listViewDevices.SelectedItems[0].BackColor == Color.GreenYellow)
+            if (listViewDevices.SelectedItems.Count > 0 && listViewDevices.SelectedItems[0].BackColor != SystemColors.Window)
             {
                 buttonPair.Enabled = false;
                 buttonUnpair.Enabled = true;
@@ -129,12 +133,6 @@ namespace Medic
                     if (result == DevicePairingResultStatus.Paired)
                     {
                         log("Pairing successful with " + device);
-                        listViewDevices.Invoke(new Action(() =>
-                        {
-                            listViewDevices.SelectedItems[0].BackColor = Color.GreenYellow;
-                            listViewDevices.SelectedIndices.Clear();
-                        }));
-
                         findDeviceTypeAsync(device);
                     }
                     else
@@ -167,15 +165,29 @@ namespace Medic
 
             listViewDevices.Invoke(new Action(() =>
             {
-                listViewDevices.SelectedItems[0].BackColor = default(Color);
+                if (listViewDevices.SelectedItems[0].BackColor == greenColor)
+                {
+                    buttonGreen.BackColor = default(Color);
+                    buttonGreen.Text = String.Empty;
+                    greenBLE = null;
+                }
+                else if (listViewDevices.SelectedItems[0].BackColor == purpleColor)
+                {
+                    buttonPurple.BackColor = default(Color);
+                    buttonPurple.Text = String.Empty;
+                    purpleBLE = null;
+                }
+
+                listViewDevices.SelectedItems[0].BackColor = SystemColors.Window;
                 listViewDevices.SelectedIndices.Clear();
             }));
         }
 
-        public void log(String message)
+        public void log(String message, Color color = default(Color))
         {
             labelConsole.Invoke((MethodInvoker)delegate
             {
+                labelConsole.ForeColor = color;
                 labelConsole.Text = message;
             });
         }
@@ -189,141 +201,215 @@ namespace Medic
 
                 foreach (var service in services.Services)
                 {
-                    if (service.Uuid.ToString().Equals(GattService.FloraAccelerometerService))
+                    if (service.Uuid.ToString().Equals(GattService.FloraSensorService))
                     {
                         var characteristics = await service.GetCharacteristicsAsync();
                         foreach (var curCharacteristic in characteristics.Characteristics)
                         {
-                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristicX))
-                                device.accelerometerX = curCharacteristic;
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristicY))
-                                device.accelerometerY = curCharacteristic;
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristicZ))
-                                device.accelerometerZ = curCharacteristic;
-                        }
-                    }
-                    else if (service.Uuid.ToString().Equals(GattService.FloraMagnetometerService))
-                    {
-                        var characteristics = await service.GetCharacteristicsAsync();
-                        foreach (var curCharacteristic in characteristics.Characteristics)
-                        {
-                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristicX))
-                                device.magnetometerX = curCharacteristic;
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristicY))
-                                device.magnetometerY = curCharacteristic;
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristicZ))
-                                device.magnetometerZ = curCharacteristic;
-                        }
-                    }
-                    else if (service.Uuid.ToString().Equals(GattService.FloraGyroscopeService))
-                    {
-                        var characteristics = await service.GetCharacteristicsAsync();
-                        foreach (var curCharacteristic in characteristics.Characteristics)
-                        {
-                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristicX))
+                            if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraAccelerometerCharacteristic))
+                                device.accelerometer = curCharacteristic;
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraMagnetometerCharacteristic))
+                                device.magnetometer = curCharacteristic;
+                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristic))
                             {
-                                if (curCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                                var rex = await curCharacteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
+                                if (rex.Status == GattCommunicationStatus.Success)
                                 {
-                                    var result = await curCharacteristic.ReadValueAsync();
-                                    var reader = DataReader.FromBuffer(result.Value);
+                                    Console.WriteLine(rex.Value);
+                                    var reader = DataReader.FromBuffer(rex.Value);
                                     byte[] input = new byte[reader.UnconsumedBufferLength];
                                     reader.ReadBytes(input);
                                     float gyroX = BitConverter.ToSingle(input, 0);
-                                    Console.WriteLine(gyroX);
+
                                     if (gyroX != 0) //isGreen
                                     {
-                                        buttonGreen.BackColor = Color.DarkGreen;
-                                        buttonGreen.Text = device.Name;
+                                        buttonGreen.Invoke(new Action(() =>
+                                        {
+                                            buttonGreen.BackColor = greenColor;
+                                            buttonGreen.Text = device.Name;
+                                        }));
+                                        listViewDevices.Invoke(new Action(() =>
+                                        {
+                                            if (listViewDevices.SelectedItems.Count > 0)
+                                            {
+                                                listViewDevices.SelectedItems[0].BackColor = greenColor;
+                                                listViewDevices.SelectedIndices.Clear();
+                                            }
+                                        }));
                                     }
                                     else //isPurple
                                     {
-                                        buttonPurple.BackColor = Color.MediumPurple;
-                                        buttonPurple.Text = device.Name;
+                                        buttonPurple.Invoke(new Action(() =>
+                                        {
+                                            buttonPurple.BackColor = purpleColor;
+                                            buttonPurple.Text = device.Name;
+                                        }));
+                                        listViewDevices.Invoke(new Action(() =>
+                                        {
+                                            if (listViewDevices.SelectedItems.Count > 0)
+                                            {
+                                                listViewDevices.SelectedItems[0].BackColor = purpleColor;
+                                                listViewDevices.SelectedIndices.Clear();
+                                            }
+                                        }));
                                     }
                                 }
-                                device.gyroscopeX = curCharacteristic;
+                                device.gyroscope = curCharacteristic;
                             }
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristicY))
-                                device.gyroscopeY = curCharacteristic;
-                            else if (curCharacteristic.Uuid.ToString().Equals(GattService.FloraGyroscopeCharacteristicZ))
-                                device.gyroscopeZ = curCharacteristic;
                         }
                     }
                 }
 
-                if(buttonGreen.BackColor == Color.DarkGreen && greenBLE == null)
+                if (buttonGreen.BackColor == greenColor && greenBLE == null)
                     greenBLE = device;
-                else if (buttonPurple.BackColor == Color.MediumPurple && purpleBLE == null)
+                else if (buttonPurple.BackColor == purpleColor && purpleBLE == null)
                     purpleBLE = device;
 
-                if (greenBLE != null && purpleBLE != null)
+                if (greenBLE != null )//&& purpleBLE != null)
                 {
-                    buttonStart.Enabled = true;
-                    buttonStop.Enabled = false;
+                    buttonStart.Invoke(new Action(() =>
+                    {
+                        buttonStart.Enabled = true;
+                    }));
+                    buttonStop.Invoke(new Action(() =>
+                    {
+                        buttonStop.Enabled = false;
+                    }));
                 }
+
+                listViewDevices.Invoke(new Action(() =>
+                {
+                    if (listViewDevices.SelectedItems.Count > 0 && listViewDevices.SelectedItems[0].BackColor == SystemColors.Window)
+                    {
+                        listViewDevices.SelectedItems[0].BackColor = Color.LightSkyBlue;
+                        listViewDevices.SelectedIndices.Clear();
+                    }
+                }));
             }
             catch (Exception ex)
             {
-                labelConsole.Text = "Error reading Services and Characteristics";
+                log(ex.Message, Color.Red);
             }
         }
 
-        public async void GatherGreenData()
+        public async void readGreenData()
         {
             try
             {
                 if (greenBLE != null)
                 {
-                    
+                    SensorValue accel = new SensorValue();
+                    SensorValue gyro = new SensorValue();
+                    SensorValue magneto = new SensorValue();
+                    GattReadResult result;
+                    byte[] input = new byte[12];
+
+                    while (true)
+                    {
+                        //Accelerometer
+                        if (greenBLE.accelerometer.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                        {
+                            result = await greenBLE.accelerometer.ReadValueAsync(BluetoothCacheMode.Uncached);
+                            if (result.Status == GattCommunicationStatus.Success)
+                            {
+                                DataReader.FromBuffer(result.Value).ReadBytes(input);
+                                //Console.WriteLine(BitConverter.ToString(input));
+                                accel.x = BitConverter.ToSingle(input, 0);
+                                accel.y = BitConverter.ToSingle(input, 4);
+                                accel.z = BitConverter.ToSingle(input, 8);
+                            }
+                        }
+
+                        ////Magnetometer
+                        if (greenBLE.magnetometer.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                        {
+                            result = await greenBLE.magnetometer.ReadValueAsync(BluetoothCacheMode.Uncached);
+                            if (result.Status == GattCommunicationStatus.Success)
+                            {
+                                DataReader.FromBuffer(result.Value).ReadBytes(input);
+                                //Console.WriteLine(BitConverter.ToString(input));
+                                magneto.x = BitConverter.ToSingle(input, 0);
+                                magneto.y = BitConverter.ToSingle(input, 4);
+                                magneto.z = BitConverter.ToSingle(input, 8);
+                            }
+                        }
+
+                        ////Gyroscope
+                        if (greenBLE.gyroscope.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
+                        {
+                            result = await greenBLE.gyroscope.ReadValueAsync(BluetoothCacheMode.Uncached);
+                            if (result.Status == GattCommunicationStatus.Success)
+                            {
+                                DataReader.FromBuffer(result.Value).ReadBytes(input);
+                                //Console.WriteLine(BitConverter.ToString(input));
+                                gyro.x = BitConverter.ToSingle(input, 0);
+                                gyro.y = BitConverter.ToSingle(input, 4);
+                                gyro.z = BitConverter.ToSingle(input, 8);
+                            }
+                        }
+
+                        Console.WriteLine("Accel " + accel.toString());
+                        Console.WriteLine("Magneto " + magneto.toString());
+                        Console.WriteLine("Gyro " + gyro.toString());
+                    }
                 }
             }
             catch (Exception ex)
             {
-                // log errors
+                log(ex.Message, Color.Red);
             }
         }
 
         private void buttonStart_Click(object sender, EventArgs e)
         {
             bool exit = false;
-            Color errorColor = Color.DarkRed;
+            Color errorColor = Color.OrangeRed;
             if (String.IsNullOrWhiteSpace(textBoxName.Text))
             {
                 textBoxName.BackColor = errorColor;
                 exit = true;
             }
-            else if (String.IsNullOrWhiteSpace(textBoxSurname.Text))
+            if (String.IsNullOrWhiteSpace(textBoxSurname.Text))
             {
                 textBoxSurname.BackColor = errorColor;
                 exit = true;
-            }else if (String.IsNullOrWhiteSpace(textBoxAge.Text))
+            }
+            if (String.IsNullOrWhiteSpace(textBoxAge.Text))
             {
                 textBoxAge.BackColor = errorColor;
                 exit = true;
             }
-            else if (String.IsNullOrWhiteSpace(textBoxHeight.Text))
+            if (String.IsNullOrWhiteSpace(textBoxHeight.Text))
             {
                 textBoxHeight.BackColor = errorColor;
                 exit = true;
             }
-            else if (String.IsNullOrWhiteSpace(textBoxWeight.Text))
+            if (String.IsNullOrWhiteSpace(textBoxWeight.Text))
             {
                 textBoxWeight.BackColor = errorColor;
                 exit = true;
             }
 
-            if (exit)
-                return;
+            //if (exit)
+            //    return;
 
             buttonStart.Enabled = false;
             buttonStop.Enabled = true;
+
+            readGreenDataThread = new Thread(new ThreadStart(readGreenData));
+            readGreenDataThread.Start();
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
+            if (readGreenDataThread != null)
+            {
+                readGreenDataThread.Abort();
+                readGreenDataThread = null;
+                buttonStart.Enabled = true;
+                buttonStop.Enabled = false;
+            }
 
         }
-
-
     }
 }

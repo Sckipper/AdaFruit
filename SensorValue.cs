@@ -11,5 +11,11 @@ namespace Medic
         public float x { get; set; }
         public float y { get; set; }
         public float z { get; set; }
+
+        public String toString()
+        {
+            return "X:" + x + " Y:" + y + " Z:" + z;
+        }
+
     }
 }
