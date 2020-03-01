@@ -136,7 +136,7 @@ namespace Medic
                         findDeviceTypeAsync(device);
                     }
                     else
-                        log("Pairing failed: " + result);
+                        log("Pairing failed: " + result, Color.Red);
 
                 }
                 catch (Exception ex)
@@ -267,7 +267,7 @@ namespace Medic
                     }
                 }
 
-                if (greenBLE != null)//&& purpleBLE != null)
+                if (greenBLE != null || purpleBLE != null)
                 {
                     buttonStart.Invoke(new Action(() =>
                     {
@@ -320,7 +320,7 @@ namespace Medic
                             if (result.Status == GattCommunicationStatus.Success)
                             {
                                 DataReader.FromBuffer(result.Value).ReadBytes(input);
-                                Console.WriteLine(BitConverter.ToString(input));
+                                //Console.WriteLine(BitConverter.ToString(input));
                                 accel.x = BitConverter.ToInt16(input, 0);
                                 accel.y = BitConverter.ToInt16(input, 2);
                                 accel.z = BitConverter.ToInt16(input, 4);
@@ -335,7 +335,7 @@ namespace Medic
 
                         Console.WriteLine("Accel " + accel.toString());
                         Console.WriteLine("Magneto " + magneto.toString());
-                        Console.WriteLine("Gyro " + gyro.toString());
+                        //Console.WriteLine("Gyro " + gyro.toString());
                     }
                 }
             }
@@ -347,12 +347,12 @@ namespace Medic
 
         private void buttonStart_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
-            {
-                buttonStart.Enabled = false;
-                buttonStop.Enabled = false;
-                return;
-            }
+            //if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
+            //{
+            //    buttonStart.Enabled = false;
+            //    buttonStop.Enabled = false;
+            //    return;
+            //}
 
             bool exit = false;
             Color errorColor = Color.OrangeRed;
@@ -388,8 +388,17 @@ namespace Medic
             buttonStart.Enabled = false;
             buttonStop.Enabled = true;
 
-            readPurpleDataThread = new Thread(new ParameterizedThreadStart(readData));
-            readPurpleDataThread.Start(purpleBLE);
+            if (purpleBLE != null)
+            {
+                readPurpleDataThread = new Thread(new ParameterizedThreadStart(readData));
+                readPurpleDataThread.Start(purpleBLE);
+            }
+                
+            else if (greenBLE != null)
+            {
+                readGreenDataThread = new Thread(new ParameterizedThreadStart(readData));
+                readGreenDataThread.Start(greenBLE);
+            }
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
@@ -409,11 +418,11 @@ namespace Medic
                 buttonStop.Enabled = false;
             }
 
-            if(String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
-            {
-                buttonStart.Enabled = false;
-                buttonStop.Enabled = false;
-            }
+            //if(String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
+            //{
+            //    buttonStart.Enabled = false;
+            //    buttonStop.Enabled = false;
+            //}
         }
     }
 }
