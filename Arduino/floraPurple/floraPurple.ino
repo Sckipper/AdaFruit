@@ -5,7 +5,7 @@
 #include "Adafruit_BluefruitLE_UART.h"
 #include "Adafruit_BLEGatt.h"
 #include <Adafruit_Sensor.h>
-#include <Adafruit_LSM303.h>
+#include <Adafruit_LSM303_U.h>
 
 #if SOFTWARE_SERIAL_AVAILABLE
   #include <SoftwareSerial.h>
@@ -14,9 +14,10 @@
 #define VERBOSE_MODE                   false 
 #define BLUEFRUIT_UART_MODE_PIN        12    
 
-Adafruit_LSM303 lsm303;
+Adafruit_LSM303_Accel_Unified lsm303 = Adafruit_LSM303_Accel_Unified(54321);
 Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN);
 Adafruit_BLEGatt gatt(ble);
+sensors_event_t event;
 
 int32_t AllCharId;
 byte result[18];
@@ -29,7 +30,7 @@ void error(const __FlashStringHelper*err) {
 
 typedef union
 {
- int16_t nr;
+ float nr;
  uint8_t by[4];
 } FLOATUNION_t;
 // END Helper region
@@ -93,14 +94,14 @@ void setup(void)
 
 void loop(void)
 { 
-  lsm303.read();
+  lsm303.getEvent(&event);
 
-  accelX.nr = lsm303.accelData.x;
-  accelY.nr = lsm303.accelData.y;
-  accelZ.nr = lsm303.accelData.z;
-  magX.nr = lsm303.magData.x;
-  magY.nr = lsm303.magData.y;
-  magZ.nr = lsm303.magData.z;
+  accelX.nr = event.acceleration.x;
+  accelY.nr = event.acceleration.y;
+  accelZ.nr = event.acceleration.z;
+  magX.nr = event.magnetic.x;
+  magY.nr = event.magnetic.y;
+  magZ.nr = event.magnetic.z;
   
   memcpy(result, accelX.by, 2);
   memcpy(result+2, accelY.by, 2);
@@ -117,4 +118,5 @@ void loop(void)
 //  Serial.print("Mag X: "); Serial.print(magX.nr);     Serial.print(" ");
 //  Serial.print("Y: "); Serial.print(magY.nr);         Serial.print(" ");
 //  Serial.print("Z: "); Serial.println(magZ.nr);       Serial.print(" ");
+//  Serial.println("");
 }
