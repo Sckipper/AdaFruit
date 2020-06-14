@@ -13,7 +13,9 @@
 #define VERBOSE_MODE                   false 
 #define BLUEFRUIT_UART_MODE_PIN        12    
 
-Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
+Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);  // Use I2C, ID #1000
+sensors_event_t accel, mag, gyro, temp;
+
 Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN);
 Adafruit_BLEGatt gatt(ble);
 
@@ -28,7 +30,7 @@ void error(const __FlashStringHelper*err) {
 
 typedef union
 {
- int16_t nr;
+ float nr;
  uint8_t by[2];
 } FLOATUNION_t;
 // END Helper region
@@ -75,6 +77,7 @@ void setup(void)
   Serial.println("Initialising the 9DOF module");
   if (!lsm.begin())
       error(F("Unable to initialize LSM9DS0. Check your wiring!"));
+  setupSensor(); //setup sensor sensitivity
 
   /* Initialise the module */
   Serial.println(F("Initialising the Bluefruit LE module"));
@@ -116,17 +119,17 @@ void setup(void)
 
 void loop(void)
 { 
-  lsm.read();
+  lsm.getEvent(&accel, &mag, &gyro, &temp);
 
-  accelX.nr = lsm.accelData.x;
-  accelY.nr = lsm.accelData.y;
-  accelZ.nr = lsm.accelData.z;
-  magX.nr = lsm.magData.x;
-  magY.nr = lsm.magData.y;
-  magZ.nr = lsm.magData.z;
-  gyroX.nr = lsm.gyroData.x;
-  gyroY.nr = lsm.gyroData.y;
-  gyroZ.nr = lsm.gyroData.z;
+  accelX.nr = accel.acceleration.x;
+  accelY.nr = accel.acceleration.y;
+  accelZ.nr = accel.acceleration.z;
+  magX.nr = mag.magnetic.x;
+  magY.nr = mag.magnetic.y;
+  magZ.nr = mag.magnetic.z;
+  gyroX.nr = gyro.gyro.x;
+  gyroY.nr = gyro.gyro.y;
+  gyroZ.nr = gyro.gyro.z;
   
   memcpy(result, accelX.by, 2);
   memcpy(result+2, accelY.by, 2);
@@ -141,14 +144,14 @@ void loop(void)
   memcpy(result+16, gyroZ.by, 2);
   
   gatt.setChar(AllCharId, result, 18);
-//
-//  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.print(" ");
-//  Serial.print("Y: "); Serial.print(accelY.nr);       Serial.print(" ");
-//  Serial.print("Z: "); Serial.println(accelZ.nr);     Serial.print(" ");
-//  Serial.print("Mag X: "); Serial.print(magX.nr);     Serial.print(" ");
-//  Serial.print("Y: "); Serial.print(magY.nr);         Serial.print(" ");
-//  Serial.print("Z: "); Serial.println(magZ.nr);       Serial.print(" ");
-//  Serial.print("Gyro X: "); Serial.print(gyroX.nr);   Serial.print(" ");
-//  Serial.print("Y: "); Serial.print(gyroY.nr);        Serial.print(" ");
-//  Serial.print("Z: "); Serial.println(gyroZ.nr);      Serial.println(" ");
+
+  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.print(" ");
+  Serial.print("Y: "); Serial.print(accelY.nr);       Serial.print(" ");
+  Serial.print("Z: "); Serial.println(accelZ.nr);     Serial.print(" ");
+  Serial.print("Mag X: "); Serial.print(magX.nr);     Serial.print(" ");
+  Serial.print("Y: "); Serial.print(magY.nr);         Serial.print(" ");
+  Serial.print("Z: "); Serial.println(magZ.nr);       Serial.print(" ");
+  Serial.print("Gyro X: "); Serial.print(gyroX.nr);   Serial.print(" ");
+  Serial.print("Y: "); Serial.print(gyroY.nr);        Serial.print(" ");
+  Serial.print("Z: "); Serial.println(gyroZ.nr);      Serial.println(" ");
 }
