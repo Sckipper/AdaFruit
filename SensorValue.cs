@@ -8,9 +8,9 @@ namespace Medic
 {
     class SensorValue
     {
-        public short x { get; set; }
-        public short y { get; set; }
-        public short z { get; set; }
+        public float x { get; set; }
+        public float y { get; set; }
+        public float z { get; set; }
 
         public String toString()
         {

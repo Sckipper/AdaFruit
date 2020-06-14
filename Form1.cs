@@ -20,6 +20,9 @@ namespace Medic
         private Thread readPurpleDataThread = null;
         private Color greenColor = Color.GreenYellow;
         private Color purpleColor = Color.Violet;
+        private Color errorColor = Color.OrangeRed;
+        private double MaxPitch = 0;
+        private String ExerciseResult = "";
 
         public MainWindow()
         {
@@ -158,14 +161,14 @@ namespace Medic
             log("Unpairing " + device);
             var dev = await BluetoothLEDevice.FromIdAsync(device.DeviceId).AsTask();
 
-            if (buttonStop.Enabled == true && ((greenBLE!= null && dev.DeviceId == greenBLE.DeviceId) || (purpleBLE != null && dev.DeviceId == purpleBLE.DeviceId)))
+            if (buttonStop.Enabled == true && ((greenBLE != null && dev.DeviceId == greenBLE.DeviceId) || (purpleBLE != null && dev.DeviceId == purpleBLE.DeviceId)))
                 buttonStop.PerformClick();
 
             var result = await dev.DeviceInformation.Pairing.UnpairAsync();
             if (result == null || result.Status == DeviceUnpairingResultStatus.Unpaired)
                 log("Unpairing successful with" + device);
             else
-                log("Unpairing unsuccessful with" + device);
+                log("Unpairing unsuccessful with" + device, Color.Red);
 
             listViewDevices.Invoke(new Action(() =>
             {
@@ -267,7 +270,7 @@ namespace Medic
                     }
                 }
 
-                if (greenBLE != null || purpleBLE != null)
+                if (greenBLE != null && purpleBLE != null)
                 {
                     buttonStart.Invoke(new Action(() =>
                     {
@@ -301,6 +304,7 @@ namespace Medic
 
         public async void readData(object dev)
         {
+            MaxPitch = 0;
             var device = (DnaBluetoothLEDevice)dev;
             try
             {
@@ -312,6 +316,9 @@ namespace Medic
                     GattReadResult result;
                     byte[] input = new byte[18];
 
+                    //Calculus
+                    double Pitch_f;
+
                     while (true)
                     {
                         if (device.caracteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
@@ -321,21 +328,39 @@ namespace Medic
                             {
                                 DataReader.FromBuffer(result.Value).ReadBytes(input);
                                 //Console.WriteLine(BitConverter.ToString(input));
-                                accel.x = BitConverter.ToInt16(input, 0);
-                                accel.y = BitConverter.ToInt16(input, 2);
-                                accel.z = BitConverter.ToInt16(input, 4);
-                                magneto.x = BitConverter.ToInt16(input, 6);
-                                magneto.y = BitConverter.ToInt16(input, 8);
-                                magneto.z = BitConverter.ToInt16(input, 10);
-                                gyro.x = BitConverter.ToInt16(input, 12);
-                                gyro.y = BitConverter.ToInt16(input, 14);
-                                gyro.z = BitConverter.ToInt16(input, 16);
+                                accel.x = (float)BitConverter.ToInt16(input, 0) / (float)1000;
+                                accel.y = (float)BitConverter.ToInt16(input, 2) / (float)1000;
+                                accel.z = (float)BitConverter.ToInt16(input, 4) / (float)1000;
+                                magneto.x = (float)BitConverter.ToInt16(input, 6) / (float)1000;
+                                magneto.y = (float)BitConverter.ToInt16(input, 8) / (float)100 / (float)10000;
+                                magneto.z = (float)BitConverter.ToInt16(input, 10) / (float)1000;
+                                gyro.x = (float)BitConverter.ToInt16(input, 12) / (float)1000;
+                                gyro.y = (float)BitConverter.ToInt16(input, 14) / (float)1000;
+                                gyro.z = (float)BitConverter.ToInt16(input, 16) / (float)1000;
                             }
                         }
 
                         Console.WriteLine("Accel " + accel.toString());
-                        Console.WriteLine("Magneto " + magneto.toString());
+                        //Console.WriteLine("Magneto " + magneto.toString());
                         //Console.WriteLine("Gyro " + gyro.toString());
+
+                        var AxN = (accel.x + 10) / 20;
+                        var AyN = (accel.y + 10) / 20;
+                        var AzN = (accel.z + 10) / 20;
+                        var Pitch = Math.Asin(-AxN);
+                        var Pitch_grad = Pitch * 180 / Math.PI;
+                        if (accel.x < 0)
+                            Pitch_f = Math.Abs(Pitch_grad);
+                        else
+                            Pitch_f = Math.Abs(Pitch_grad) + 100;
+
+                        var Roll = Math.Asin(AyN / Math.Cos(Pitch));
+                        var Roll_grad = Roll * 180 / Math.PI;
+                        if (MaxPitch < Pitch_f)
+                            MaxPitch = Pitch_f;
+
+                        Console.WriteLine("Pitch: " + Pitch_f + "    Roll: " + Roll_grad);
+                        Console.WriteLine("");
                     }
                 }
             }
@@ -347,15 +372,15 @@ namespace Medic
 
         private void buttonStart_Click(object sender, EventArgs e)
         {
-            //if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
-            //{
-            //    buttonStart.Enabled = false;
-            //    buttonStop.Enabled = false;
-            //    return;
-            //}
+            if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
+            {
+                buttonStart.Enabled = false;
+                buttonStop.Enabled = false;
+                return;
+            }
 
             bool exit = false;
-            Color errorColor = Color.OrangeRed;
+
             if (String.IsNullOrWhiteSpace(textBoxName.Text))
             {
                 textBoxName.BackColor = errorColor;
@@ -382,8 +407,8 @@ namespace Medic
                 exit = true;
             }
 
-            //if (exit)
-            //    return;
+            if (exit)
+                return;
 
             buttonStart.Enabled = false;
             buttonStop.Enabled = true;
@@ -392,13 +417,20 @@ namespace Medic
             {
                 readPurpleDataThread = new Thread(new ParameterizedThreadStart(readData));
                 readPurpleDataThread.Start(purpleBLE);
+                readPurpleDataThread.Join();
             }
-                
+
             else if (greenBLE != null)
             {
                 readGreenDataThread = new Thread(new ParameterizedThreadStart(readData));
                 readGreenDataThread.Start(greenBLE);
+                readGreenDataThread.Join();
             }
+
+            listViewDevices.Invoke(new Action(() =>
+            {
+                labelResultValue.Text = "";
+            }));
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
@@ -418,11 +450,35 @@ namespace Medic
                 buttonStop.Enabled = false;
             }
 
-            //if(String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
-            //{
-            //    buttonStart.Enabled = false;
-            //    buttonStop.Enabled = false;
-            //}
+            if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
+            {
+                buttonStart.Enabled = false;
+                buttonStop.Enabled = false;
+            }
+
+            FlexieExtensieBrat_END();
+        }
+
+        private void FlexieExtensieBrat_END()
+        {
+            listViewDevices.Invoke(new Action(() =>
+            {
+                if (MaxPitch < 100)
+                {
+                    labelResultValue.Text = "Exercitiul nu a fost realizata corect";
+                    labelResultValue.ForeColor = Color.Red;
+                }
+                else if (MaxPitch > 100 && MaxPitch < 160)
+                {
+                    labelResultValue.Text = "Exercitiul trebuie imbunatatit";
+                    labelResultValue.ForeColor = Color.Blue;
+                }
+                else if (MaxPitch > 160)
+                {
+                    labelResultValue.Text = "Exercitiul a fost realizat corect";
+                    labelResultValue.ForeColor = Color.Green;
+                }
+            }));
         }
     }
 }

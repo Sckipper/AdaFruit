@@ -49,6 +49,9 @@
             this.textBoxHeight = new System.Windows.Forms.TextBox();
             this.labelWeight = new System.Windows.Forms.Label();
             this.textBoxWeight = new System.Windows.Forms.TextBox();
+            this.pictureBox = new System.Windows.Forms.PictureBox();
+            this.panelDraw.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             this.SuspendLayout();
             // 
             // labelConsole
@@ -120,6 +123,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panelDraw.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.panelDraw.Controls.Add(this.pictureBox);
             this.panelDraw.Location = new System.Drawing.Point(516, 12);
             this.panelDraw.Name = "panelDraw";
             this.panelDraw.Size = new System.Drawing.Size(400, 250);
@@ -155,20 +159,20 @@
             this.labelResult.Font = new System.Drawing.Font("Stencil", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelResult.Location = new System.Drawing.Point(625, 362);
             this.labelResult.Name = "labelResult";
-            this.labelResult.Size = new System.Drawing.Size(168, 44);
+            this.labelResult.Size = new System.Drawing.Size(211, 44);
             this.labelResult.TabIndex = 10;
-            this.labelResult.Text = "Result:";
+            this.labelResult.Text = "Rezultat:";
             // 
             // labelResultValue
             // 
             this.labelResultValue.AutoSize = true;
             this.labelResultValue.Font = new System.Drawing.Font("Arial Rounded MT Bold", 26.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelResultValue.Location = new System.Drawing.Point(642, 426);
+            this.labelResultValue.Location = new System.Drawing.Point(551, 413);
+            this.labelResultValue.MaximumSize = new System.Drawing.Size(400, 300);
             this.labelResultValue.Name = "labelResultValue";
             this.labelResultValue.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.labelResultValue.Size = new System.Drawing.Size(127, 40);
+            this.labelResultValue.Size = new System.Drawing.Size(0, 40);
             this.labelResultValue.TabIndex = 11;
-            this.labelResultValue.Text = "GOOD";
             // 
             // labelName
             // 
@@ -260,6 +264,16 @@
             this.textBoxWeight.Size = new System.Drawing.Size(173, 26);
             this.textBoxWeight.TabIndex = 21;
             // 
+            // pictureBox
+            // 
+            this.pictureBox.ImageLocation = "E:\\GIT\\AdaFruit\\Resources\\Exercise1.jpg";
+            this.pictureBox.Location = new System.Drawing.Point(5, 5);
+            this.pictureBox.Name = "pictureBox";
+            this.pictureBox.Size = new System.Drawing.Size(392, 329);
+            this.pictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox.TabIndex = 0;
+            this.pictureBox.TabStop = false;
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -289,6 +303,8 @@
             this.Name = "MainWindow";
             this.Text = "Titlu";
             this.Load += new System.EventHandler(this.MainWindow_Load);
+            this.panelDraw.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -317,6 +333,7 @@
         private System.Windows.Forms.TextBox textBoxHeight;
         private System.Windows.Forms.Label labelWeight;
         private System.Windows.Forms.TextBox textBoxWeight;
+        private System.Windows.Forms.PictureBox pictureBox;
     }
 }
 
