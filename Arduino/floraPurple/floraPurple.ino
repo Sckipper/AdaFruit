@@ -30,7 +30,7 @@ void error(const __FlashStringHelper*err) {
 
 typedef union
 {
- float nr;
+ int nr;
  uint8_t by[4];
 } FLOATUNION_t;
 // END Helper region
@@ -96,12 +96,12 @@ void loop(void)
 { 
   lsm303.getEvent(&event);
 
-  accelX.nr = event.acceleration.x;
-  accelY.nr = event.acceleration.y;
-  accelZ.nr = event.acceleration.z;
-  magX.nr = event.magnetic.x;
-  magY.nr = event.magnetic.y;
-  magZ.nr = event.magnetic.z;
+  accelX.nr = event.acceleration.x * 1000;
+  accelY.nr = event.acceleration.y * 1000;
+  accelZ.nr = event.acceleration.z * 1000;
+  magX.nr = event.magnetic.x * 1000;
+  magY.nr = event.magnetic.y * 1000;
+  magZ.nr = event.magnetic.z * 1000;
   
   memcpy(result, accelX.by, 2);
   memcpy(result+2, accelY.by, 2);

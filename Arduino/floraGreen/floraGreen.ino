@@ -30,7 +30,7 @@ void error(const __FlashStringHelper*err) {
 
 typedef union
 {
- float nr;
+ int nr;
  uint8_t by[2];
 } FLOATUNION_t;
 // END Helper region
@@ -121,15 +121,15 @@ void loop(void)
 { 
   lsm.getEvent(&accel, &mag, &gyro, &temp);
 
-  accelX.nr = accel.acceleration.x;
-  accelY.nr = accel.acceleration.y;
-  accelZ.nr = accel.acceleration.z;
-  magX.nr = mag.magnetic.x;
-  magY.nr = mag.magnetic.y;
-  magZ.nr = mag.magnetic.z;
-  gyroX.nr = gyro.gyro.x;
-  gyroY.nr = gyro.gyro.y;
-  gyroZ.nr = gyro.gyro.z;
+  accelX.nr = accel.acceleration.x * 1000;
+  accelY.nr = accel.acceleration.y * 1000;
+  accelZ.nr = accel.acceleration.z * 1000;
+  magX.nr = mag.magnetic.x * 1000;
+  magY.nr = mag.magnetic.y * 1000;
+  magZ.nr = mag.magnetic.z * 1000;
+  gyroX.nr = gyro.gyro.x * 1000;
+  gyroY.nr = gyro.gyro.y * 1000;
+  gyroZ.nr = gyro.gyro.z * 1000;
   
   memcpy(result, accelX.by, 2);
   memcpy(result+2, accelY.by, 2);
@@ -144,14 +144,15 @@ void loop(void)
   memcpy(result+16, gyroZ.by, 2);
   
   gatt.setChar(AllCharId, result, 18);
-
-  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.print(" ");
-  Serial.print("Y: "); Serial.print(accelY.nr);       Serial.print(" ");
-  Serial.print("Z: "); Serial.println(accelZ.nr);     Serial.print(" ");
-  Serial.print("Mag X: "); Serial.print(magX.nr);     Serial.print(" ");
-  Serial.print("Y: "); Serial.print(magY.nr);         Serial.print(" ");
-  Serial.print("Z: "); Serial.println(magZ.nr);       Serial.print(" ");
-  Serial.print("Gyro X: "); Serial.print(gyroX.nr);   Serial.print(" ");
-  Serial.print("Y: "); Serial.print(gyroY.nr);        Serial.print(" ");
-  Serial.print("Z: "); Serial.println(gyroZ.nr);      Serial.println(" ");
+//
+//  Serial.print("Accel X: "); Serial.print(accelX.nr); Serial.println(" ");
+//  Serial.print("Y: "); Serial.print(accelY.nr);    Serial.println(" ");
+//  Serial.print("Z: "); Serial.println(accelZ.nr);     Serial.print(" ");
+//  Serial.print("Mag X: "); Serial.print(magX.nr);     Serial.print(" ");
+//  Serial.print("Y: "); Serial.print(magY.nr);         Serial.print(" ");
+//  Serial.print("Z: "); Serial.println(magZ.nr);       Serial.print(" ");
+//  Serial.print("Gyro X: "); Serial.print(gyroX.nr);   Serial.print(" ");
+//  Serial.print("Y: "); Serial.print(gyroY.nr);        Serial.print(" ");
+//  Serial.print("Z: "); Serial.println(gyroZ.nr);      Serial.println(" ");
+  
 }
