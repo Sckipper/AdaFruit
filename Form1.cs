@@ -22,7 +22,6 @@ namespace Medic
         private Color purpleColor = Color.Violet;
         private Color errorColor = Color.OrangeRed;
         private double MaxPitch = 0;
-        private String ExerciseResult = "";
 
         public MainWindow()
         {
@@ -319,7 +318,7 @@ namespace Medic
                     //Calculus
                     double Pitch_f;
 
-                    while (true)
+                    while (buttonStop.Enabled == true)
                     {
                         if (device.caracteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Read))
                         {
@@ -415,16 +414,22 @@ namespace Medic
 
             if (purpleBLE != null)
             {
-                readPurpleDataThread = new Thread(new ParameterizedThreadStart(readData));
-                readPurpleDataThread.Start(purpleBLE);
-                readPurpleDataThread.Join();
-            }
+                ThreadStart start = () => {
+                    readData(purpleBLE);
+                };
 
-            else if (greenBLE != null)
+                readPurpleDataThread = new Thread(start);
+                readPurpleDataThread.Start();
+            }
+            
+            if (greenBLE != null)
             {
-                readGreenDataThread = new Thread(new ParameterizedThreadStart(readData));
-                readGreenDataThread.Start(greenBLE);
-                readGreenDataThread.Join();
+                ThreadStart start = () => {
+                    readData(greenBLE);
+                };
+
+                readGreenDataThread = new Thread(start);
+                readGreenDataThread.Start();
             }
 
             listViewDevices.Invoke(new Action(() =>
@@ -435,20 +440,21 @@ namespace Medic
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
+            if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
+            {
+                buttonStart.Enabled = false;
+                buttonStop.Enabled = false;
+            }else
+            {
+                buttonStart.Enabled = true;
+                buttonStop.Enabled = false;
+            }
+
             if (readGreenDataThread != null)
-            {
-                readGreenDataThread.Abort();
                 readGreenDataThread = null;
-                buttonStart.Enabled = true;
-                buttonStop.Enabled = false;
-            }
-            else if (readPurpleDataThread != null)
-            {
-                readPurpleDataThread.Abort();
+            
+            if (readPurpleDataThread != null)
                 readPurpleDataThread = null;
-                buttonStart.Enabled = true;
-                buttonStop.Enabled = false;
-            }
 
             if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
             {
