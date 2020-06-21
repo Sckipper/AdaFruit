@@ -384,27 +384,31 @@ namespace Medic
             {
                 textBoxName.BackColor = errorColor;
                 exit = true;
-            }
+            }else textBoxName.BackColor = default(Color);
+
             if (String.IsNullOrWhiteSpace(textBoxSurname.Text))
             {
                 textBoxSurname.BackColor = errorColor;
                 exit = true;
-            }
+            }else textBoxSurname.BackColor = default(Color);
+
             if (String.IsNullOrWhiteSpace(textBoxAge.Text))
             {
                 textBoxAge.BackColor = errorColor;
                 exit = true;
-            }
+            }else textBoxAge.BackColor = default(Color);
+
             if (String.IsNullOrWhiteSpace(textBoxHeight.Text))
             {
                 textBoxHeight.BackColor = errorColor;
                 exit = true;
-            }
+            }else textBoxHeight.BackColor = default(Color);
+
             if (String.IsNullOrWhiteSpace(textBoxWeight.Text))
             {
                 textBoxWeight.BackColor = errorColor;
                 exit = true;
-            }
+            }else textBoxWeight.BackColor = default(Color);
 
             if (exit)
                 return;
@@ -440,12 +444,6 @@ namespace Medic
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
-            textBoxName.BackColor = default(Color);
-            textBoxSurname.BackColor = default(Color);
-            textBoxAge.BackColor = default(Color);
-            textBoxHeight.BackColor = default(Color);
-            textBoxWeight.BackColor = default(Color);
-
             if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
             {
                 buttonStart.Enabled = false;
