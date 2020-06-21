@@ -1,4 +1,6 @@
-﻿namespace Medic
+﻿using System.IO;
+
+namespace Medic
 {
     partial class MainWindow
     {
@@ -266,7 +268,7 @@
             // 
             // pictureBox
             // 
-            this.pictureBox.ImageLocation = "E:\\GIT\\AdaFruit\\Resources\\Exercise1.jpg";
+            this.pictureBox.ImageLocation = Path.GetDirectoryName(Path.GetDirectoryName(System.IO.Directory.GetCurrentDirectory())) + "\\Resources\\Exercise1.jpg";
             this.pictureBox.Location = new System.Drawing.Point(5, 5);
             this.pictureBox.Name = "pictureBox";
             this.pictureBox.Size = new System.Drawing.Size(392, 329);
