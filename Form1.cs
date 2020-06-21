@@ -440,6 +440,12 @@ namespace Medic
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
+            textBoxName.BackColor = default(Color);
+            textBoxSurname.BackColor = default(Color);
+            textBoxAge.BackColor = default(Color);
+            textBoxHeight.BackColor = default(Color);
+            textBoxWeight.BackColor = default(Color);
+
             if (String.IsNullOrWhiteSpace(buttonPurple.Text) || String.IsNullOrWhiteSpace(buttonGreen.Text))
             {
                 buttonStart.Enabled = false;
