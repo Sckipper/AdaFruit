@@ -1,12 +1,12 @@
 # AdaFruit
 
-Windows form app that can scan BLE devices. It connects to 2 Adafruit sensors and receive accelerometer, magnetometer and giroscope data from them: 
+Windows form app that can scan BLE devices. It connects with two Adafruit sensors to receive accelerometer, magnetometer and giroscope data from them: 
 - Green LSM9d50 (https://www.adafruit.com/product/2020)
 - Purple LSM303 (https://www.adafruit.com/product/1247)
 
 The sensors are placed on the arm and forearm of a patient that will execute a medical recovery exercise. Sensors are connected to a 200mA batery each.
 
-Sensors record data and send them to the windows app that will calculate Pitch and Roll and will give a result (poor, mild, good)
+Sensors record data and send it to the windows app that will calculate Pitch and Roll and will give a result (poor, mild, good).
 
 
 ## Screenshots ##
