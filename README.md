@@ -30,5 +30,5 @@ The project will not be mantained, you can fork it and use as you want.
 
 ## Licence ##
 
-The whole project is GPLv3 (Please see [licence file](/LICENCE.md) for more information).
+Please see [license file](/LICENSE.md) for more information.
 
